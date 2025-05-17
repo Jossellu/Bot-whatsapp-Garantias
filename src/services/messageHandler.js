@@ -16,7 +16,7 @@ class MessageHandler {
   // Método para inicializar el trabajo programado
   initScheduledJob() {
     // Programar la tarea diaria a las 5:00 PM
-    scheduleJob('29 14 * * *', async () => {
+    scheduleJob('10 17 * * *', async () => {
       try {
         console.log('Ejecutando tarea programada: scraping y envío de mensajes');
         await this.processDailyWarrantyUpdates();
