@@ -61,6 +61,7 @@ class MessageHandler {
           const phoneNumber = row._rawData[1]; // Posición 1: No.CLIENTE
           const nameClient = row._rawData[2];
           const model = row._rawData[4];       // Posición 4: MODELO
+          const imei = row._rawData[3];
           
           // Obtener el último valor no vacío del array
           let status = '';
@@ -72,7 +73,7 @@ class MessageHandler {
           }
 
           // Validar datos mínimos
-          if (!phoneNumber || !nameClient || !model || !status) {
+          if (!phoneNumber || !nameClient || !model || !status || !imei) {
             console.warn(`Fila incompleta - Datos: ${JSON.stringify(row._rawData)}`);
             continue;
           }
@@ -81,7 +82,11 @@ class MessageHandler {
           await whatsappService.sendMessage(
             `52${phoneNumber}`.replace(/\D/g, ''), // Limpiar número
             `✨ *Estimad@ ${nameClient || 'cliente'}* 
-✨Tenemos una actualizacion para el estatus de tu 📱 *Equipo:* "${model || 'Modelo no especificado'}" 
+✨Tenemos una actualizacion para el estatus de tu equipo: 
+
+📱*Equipo en garantía:* "${model || 'Modelo no especificado'}"
+
+*IMEI:* "${imei || 'Imei no especificado'}"
 
 🔄 *Estado de garantía:* "${status || 'Estado no disponible'}" 
             
@@ -122,6 +127,8 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
         await this.handleAssistandFlow(fromNumber, text);
       } else if (this.assistandState[fromNumber]?.step === "warranty") {
         await this.handleWarrantyFlow(fromNumber, text);
+      } else if (this.assistandState[fromNumber]?.step === "contact_advisor") {
+        await this.handleContactAdvisorFlow(fromNumber, text);
       }
 
       await whatsappService.markAsRead(message.id);
@@ -147,12 +154,11 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
   }
 
   async sendWelcomeMenu(to) {
-    const buttons = [
-      { reply: { id: 'consulta', title: 'Consulta' } },
-      { reply: { id: 'garantia', title: 'Seguimiento Garantía' } },
-      { reply: { id: 'contacto', title: 'Contactar Con Asesor' } }
-    ];
-    await whatsappService.sendInteractiveButtons(to, "📋 Menú Principal:", buttons);
+      const buttons = [
+        { reply: { id: 'garantia', title: 'Seguimiento Garantía' } },
+        { reply: { id: 'contacto', title: 'Contactar Con Asesor' } }
+      ];
+      await whatsappService.sendInteractiveButtons(to, "📋 Menú Principal:", buttons);
   }
 
 
@@ -175,7 +181,8 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
         delete this.assistandState[to];
       },
       "contactar": async () => {
-        await whatsappService.sendMessage(to, "Un asesor se comunicará contigo en breve.");
+        await whatsappService.sendMessage(to, "Ingresa tu número de teléfono correspondiente a tu equipo en garantía:");
+        this.assistandState[to] = { step: 'contact_advisor' };
       }
     };
 
@@ -253,7 +260,7 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
         const latestRecord = warrantyRecords[warrantyRecords.length - 1];
         const model = latestRecord._rawData[4]; // Posición 4: MODELO
         const nameClient = latestRecord._rawData[2]; // Posición 2: Nombre
-        
+        const imei = latestRecord._rawData[3];
         // Obtener el último estado no vacío
         let status = '';
         for (let i = latestRecord._rawData.length - 1; i >= 0; i--) {
@@ -268,6 +275,7 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
           to,
           `✨ *Estimad@ ${nameClient || 'cliente'}* ✨\n\n` +
           `📱 *Equipo en garantía:* "${model || 'Modelo no especificado'}"\n` +
+          `🔄 *IMEI:* "${imei || 'Imei no especificado'}"\n\n` +
           `🔄 *Último estado:* "${status || 'Estado no disponible'}"\n\n` +
           `ℹ️ Para más información o asistencia, no dudes en responder a este mensaje.\n\n` +
           `_¡Gracias por confiar en nuestro servicio!_ \n` +
@@ -292,7 +300,79 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
       delete this.assistandState[to];
     }
   }
+
+
+  async handleContactAdvisorFlow(to, phoneNumber) {
+    try {
+      // 1. Configuración de autenticación (igual que en handleWarrantyFlow)
+      const serviceAccountAuth = new JWT({
+        email: config.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+        key: config.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+      });
+
+      // 2. Inicialización del documento
+      const doc = new GoogleSpreadsheet(config.GOOGLE_SHEET_ID, serviceAccountAuth);
+      
+      await doc.loadInfo();
+      const sheet = doc.sheetsByIndex[0];
+      
+      // 3. Obtener todas las filas
+      const rows = await sheet.getRows();
+      
+      // 4. Buscar el número en la segunda columna (posición 1 en _rawData)
+      const warrantyRecords = rows.filter(row => {
+        const rowPhone = row._rawData[1]?.replace(/\D/g, ''); // Limpiar número
+        const searchPhone = phoneNumber.replace(/\D/g, ''); // Limpiar número buscado
+        return rowPhone === searchPhone;
+      });
+
+      if (warrantyRecords.length === 0) {
+        await whatsappService.sendMessage(
+          to,
+          `❌ No se encontró ningún equipo en garantía asociado al número ${phoneNumber}`
+        );
+      } else {
+        // Tomar el registro más reciente (último en la lista)
+        const latestRecord = warrantyRecords[warrantyRecords.length - 1];
+        const model = latestRecord._rawData[4]; // Posición 4: MODELO
+        const nameClient = latestRecord._rawData[2]; // Posición 2: Nombre
+        const imei = latestRecord._rawData[3]; // Posición 3: IMEI
+
+        // Enviar mensaje al asesor
+        await whatsappService.sendMessage(
+          "529711374858", // Número del asesor
+          `El usuario ${nameClient} con equipo ${model} e imei: ${imei} quiere contactar un asesor para resolver dudas, llamalo al ${to.replace('521', '52')}`
+        );
+        
+        // Enviar confirmación al cliente
+        await whatsappService.sendMessage(
+          to,
+          "Un asesor se comunicará contigo en breve. ¡Gracias por tu paciencia!"
+        );
+      }
+
+      // Mostrar opciones de seguimiento
+      const buttons = [
+        { reply: { id: 'hacer_otro_seguimiento', title: 'Hacer otro seguimiento' } },
+        { reply: { id: 'terminar', title: 'Terminar' } }
+      ];
+      await whatsappService.sendInteractiveButtons(to, "¿Necesitas algo más?", buttons);
+
+    } catch (error) {
+      console.error('Error en handleContactAdvisorFlow:', error);
+      await whatsappService.sendMessage(
+        to,
+        '⚠️ Ocurrió un error al procesar tu solicitud. Por favor intenta más tarde.'
+      );
+    } finally {
+      delete this.assistandState[to];
+    }
 }
+
+}
+
+
 
 export default new MessageHandler();
 
