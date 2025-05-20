@@ -172,7 +172,7 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
         await whatsappService.sendMessage(to, "Ingresa tu número de teléfono correspondiente a tu equipo en garantía:");
         this.assistandState[to] = { step: 'warranty' };
       },
-      "hacer otro seguimiento": async () => {
+      "hacer otro seguimien|hacer otro seguimiento": async () => {
         await whatsappService.sendMessage(to, "Ingresa tu número de teléfono correspondiente a tu equipo en garantía:");
         this.assistandState[to] = { step: 'warranty' };
       },
