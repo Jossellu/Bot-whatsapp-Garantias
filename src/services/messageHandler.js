@@ -341,7 +341,7 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
 
         // Enviar mensaje al asesor
         await whatsappService.sendMessage(
-          "529711374858", // Número del asesor
+          "5219711374858", // Número del asesor
           `El usuario ${nameClient} con equipo ${model} e imei: ${imei} quiere contactar un asesor para resolver dudas, llamalo al ${to.replace('521', '52')}`
         );
         
