@@ -29,6 +29,7 @@ class WhatsAppService {
 
   async sendImage(to, imageUrl) {
     try {
+      console.log(`Intentando enviar imagen desde URL: ${imageUrl}`);
       const response = await axios({
         method: 'POST',
         url: `https://graph.facebook.com/${config.API_VERSION}/${config.BUSINESS_PHONE}/messages`,

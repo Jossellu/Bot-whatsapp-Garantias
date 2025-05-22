@@ -10,7 +10,26 @@ import { JWT } from 'google-auth-library'
 class MessageHandler {
   constructor() {
     this.assistandState = {};
-    this.initScheduledJob(); // Inicializar el trabajo programado
+    this.processedMessages = new Set();
+    this.processedOptions = new Set();
+    this.initScheduledJob();
+    this.initCleanupJob(); 
+
+      // Nuevos estados para promociones
+    this.PROMOTION_TYPES = {
+      'planes tarifarios': 'PLANES TARIFARIOS',
+      'actualizacion': 'ACTUALIZACION DE CHIP',
+      'portabilidad': 'PORTABILIDAD'
+    };
+  }
+
+  initCleanupJob() {
+    // Limpiar mensajes procesados cada hora para evitar acumulación
+    setInterval(() => {
+      this.processedMessages.clear();
+      this.processedOptions.clear();
+      console.log('Limpieza de mensajes procesados realizada');
+    }, 3600000); // Cada hora
   }
 
   // Método para inicializar el trabajo programado
@@ -116,6 +135,14 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
   async handleIncomingMessage(message, senderInfo) {
     const fromNumber = message.from.slice(0, 2) + message.from.slice(3);
     const incomingMessage = message?.text?.body?.toLowerCase().trim();
+    const messageId = message.id;
+
+    // Verificar si ya procesamos este mensaje
+    if (this.processedMessages.has(messageId)) {
+      return;
+    }
+    this.processedMessages.add(messageId);
+
 
     if (message?.type === "text") {
       const text = message.text.body.trim();
@@ -129,18 +156,40 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
         await this.handleWarrantyFlow(fromNumber, text);
       } else if (this.assistandState[fromNumber]?.step === "contact_advisor") {
         await this.handleContactAdvisorFlow(fromNumber, text);
+      } else if (this.assistandState[fromNumber]?.step === "promotion") {
+        await this.handlePromotionFlow(fromNumber, text);
+      }else if (this.assistandState[fromNumber]?.step === "capture_name") {
+        await this.handleNameCapture(fromNumber, text);
       }
 
-      await whatsappService.markAsRead(message.id);
     } else if (message?.type === 'interactive') {
       const option = message?.interactive?.button_reply?.title.toLowerCase().trim();
-      await this.handleMenuOption(fromNumber, option, message.id);
-      await whatsappService.markAsRead(message.id);
-    }
+      await this.handleMenuOption(fromNumber, option, messageId);
+    } 
+
+    await whatsappService.markAsRead(messageId);
   }
   isGreeting(message) {
-    const greetings = ["hola", "hello", "buen dia", "buenos días", "oye", "que tal", "hi", "hey"];
-    return greetings.some(greet => message.includes(greet));
+    // Si el mensaje tiene más de 2 palabras, no es saludo
+    if (message.split(/\s+/).length > 2) return false;
+    
+    const exactGreetings = [
+      "hola", "hello", "buen dia", "buenos días", "buenas tardes",
+      "buenas noches", "que tal", "hi", "hey", "saludos", "buen","oye"
+    ];
+    
+    // Convertir a minúsculas y quitar acentos
+    const cleanMessage = message.toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+    
+    // Verificar coincidencia exacta
+    return exactGreetings.some(greet => 
+      cleanMessage === greet.toLowerCase() || 
+      cleanMessage.startsWith(greet.toLowerCase() + ' ') ||
+      cleanMessage.endsWith(' ' + greet.toLowerCase()) ||
+      cleanMessage.includes(' ' + greet.toLowerCase() + ' ')
+    );
   }
 
   async getSenderName(senderInfo) {
@@ -155,19 +204,103 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
 
   async sendWelcomeMenu(to) {
       const buttons = [
+        { reply: { id: 'promociones', title: 'Promociones' } },
         { reply: { id: 'garantia', title: 'Seguimiento Garantía' } },
         { reply: { id: 'contacto', title: 'Contactar Con Asesor' } }
       ];
       await whatsappService.sendInteractiveButtons(to, "📋 Menú Principal:", buttons);
   }
 
+  async sendPromotionsMenu(to) {
+    const buttons = [
+      { reply: { id: 'promo1', title: 'PLANES TARIFARIOS' } },
+      { reply: { id: 'promo2', title: 'ACTUALIZACION DE CHIP' } },
+      { reply: { id: 'promo3', title: 'PORTABILIDAD' } }
+    ];
+    await whatsappService.sendInteractiveButtons(to, "🏷️ Nuestras Promociones:", buttons);
+  }
+
+
+  async sendPostPromotionMenu(to, promotionType) {
+    const buttons = [
+      { reply: { id: 'mas_info', title: 'Dame más información' } },
+      { reply: { id: 'otra_promo', title: 'Ver otra promoción' } },
+      { reply: { id: 'terminar', title: 'Terminar' } }
+    ];
+    
+    // Guardar el tipo de promoción en el estado
+    this.assistandState[to] = {
+      step: 'post_promotion',
+      promotionType: promotionType
+    };
+    
+    await whatsappService.sendInteractiveButtons(to, "¿Deseas más información sobre esta promoción?", buttons);
+  }
 
   async handleMenuOption(to, option, messageId) {
+    // Verificar si ya procesamos esta opción
+    if (this.processedOptions.has(messageId)) {
+      return;
+    }
+    this.processedOptions.add(messageId);
     const optionsMap = {
-      "consulta": async () => {
-        await whatsappService.sendMessage(to, "¿En qué puedo ayudarte? Puedo resolver cualquier duda que tengas acerca de Tecnología Inalámbrica del Istmo");
-        this.assistandState[to] = { step: 'question' };
+
+      "promociones": async () => {
+        await this.sendPromotionsMenu(to);
       },
+
+      "dame mas informacion|mas_info": async () => {
+        await whatsappService.sendMessage(to, "Por favor, ¿cuál es tu nombre completo y de que parte de la republica nos escribes?");
+        this.assistandState[to] = {
+          step: 'capture_name',
+          promotionType: this.assistandState[to]?.promotionType
+        };
+      },
+
+      "promoción 1|planes tarifarios": async () => {
+        const fileUrl = `${config.BASE_URL}/promociones/promo1.jpg`;
+        await whatsappService.sendImage(to,fileUrl);
+        await whatsappService.sendMessage(to, 
+          `🔥 *PLANES TARIFARIOS* 🔥\n\n` +
+          `📌 aprovecha la promocion de recargas \n\n` +
+          `📆 Válida hasta: XX/XX/XXXX\n` +
+          `📍 Aplican términos y condiciones\n\n` +
+          `¡Aprovecha esta gran oportunidad!`
+        );
+        await this.sendPostPromotionMenu(to, 'planes tarifarios');
+      },
+
+      "promoción 2|actualizacion": async () => {
+        const fileUrl = `${config.BASE_URL}/promociones/promo1.jpg`;
+        await whatsappService.sendImage(to,fileUrl);
+        await whatsappService.sendMessage(to, 
+          `🔥 *ACTUALIZACION DE CHIP* 🔥\n\n` +
+          `📌 Descripción detallada de la promoción 2\n\n` +
+          `📆 Válida hasta: XX/XX/XXXX\n` +
+          `📍 Aplican términos y condiciones\n\n` +
+          `¡No dejes pasar esta oferta!`
+        );
+        await this.sendPostPromotionMenu(to, 'actualizacion');
+      },
+
+      "promoción 3|portabilidad": async () => {
+        const fileUrl = `${config.BASE_URL}/promociones/promo1.jpg`;
+        await whatsappService.sendImage(to,fileUrl);
+        await whatsappService.sendMessage(to, 
+          `🔥 *PORTABILIDAD* 🔥\n\n` +
+          `📌 Descripción detallada de la promoción 3\n\n` +
+          `📆 Válida hasta: XX/XX/XXXX\n` +
+          `📍 Aplican términos y condiciones\n\n` +
+          `¡Oferta por tiempo limitado!`
+        );
+        await this.sendPostPromotionMenu(to, 'portabilidad');
+      },
+
+      "promoción|otra_promo|ver otra promocion": async () => {
+        await this.sendPromotionsMenu(to);
+        delete this.assistandState[to];
+      },
+
       "garantia|seguimiento": async () => {
         await whatsappService.sendMessage(to, "Ingresa tu número de teléfono correspondiente a tu equipo en garantía:");
         this.assistandState[to] = { step: 'warranty' };
@@ -194,35 +327,15 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
     });
 
     if (matchedAction) {
-      await matchedAction[1]();
+      try {
+        await matchedAction[1]();
+      } catch (error) {
+        console.error('Error ejecutando acción:', error);
+      }
     } else {
       await whatsappService.sendMessage(to, "Opción no reconocida. Por favor, selecciona una opción válida.");
     }
   }
-
-  async handleAssistandFlow(to, userMessage) {
-    // Leer contexto del archivo .txt
-    const empresaInfo = fs.readFileSync('./data/info_empresa.txt', 'utf-8');
-
-    // Consulta a ChatGPT con contexto + pregunta del usuario
-    const fullPrompt = `${empresaInfo}\n\nUsuario: ${userMessage}\nAsistente:`;
-    const response = await geminiService(fullPrompt);
-
-
-    // Enviar respuesta
-    await whatsappService.sendMessage(to, response);
-
-    // Mostrar menú después de responder
-    const buttons = [
-      { reply: { id: 'hacer_otra', title: 'Hacer otra consulta' } },
-      { reply: { id: 'terminar', title: 'Terminar' } }
-    ];
-    await whatsappService.sendInteractiveButtons(to, "¿Te ha parecido útil la respuesta?", buttons);
-
-    // Limpiar estado
-    delete this.assistandState[to];
-  }
-
 
 
   async handleWarrantyFlow(to, phoneNumber) {
@@ -286,6 +399,7 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
       // Mostrar opciones de seguimiento
       const buttons = [
         { reply: { id: 'hacer_otro_seguimiento', title: 'Hacer otro seguimiento' } },
+        { reply: { id: 'contactar_asesor_garantia', title: 'Contactar con asesor' } },
         { reply: { id: 'terminar', title: 'Terminar' } }
       ];
       await whatsappService.sendInteractiveButtons(to, "¿Necesitas algo más?", buttons);
@@ -301,6 +415,50 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
     }
   }
 
+  async handleNameCapture(to, userName) {
+    try {
+      const promotionType = this.assistandState[to]?.promotionType;
+      
+      // Confirmar al usuario
+      await whatsappService.sendMessage(
+        to,
+        `Estimado ${userName}, en unos momentos un asesor se comunicará contigo para brindarte más información.`
+      );
+      
+      // Enviar notificación al asesor
+      const userPhone = to.replace('521', '52'); // Formatear número
+      await whatsappService.sendMessage(
+        '529711198002', // Número del asesor
+        `El cliente ${userName} quiere más información acerca de ${this.PROMOTION_TYPES[promotionType]}. ` +
+        `Por favor comunicate con él al ${userPhone}`
+      );
+      
+      // Mostrar menú reducido (solo ver otras promociones o terminar)
+      const buttons = [
+        { reply: { id: 'otra_promo', title: 'Ver otra promoción' } },
+        { reply: { id: 'terminar', title: 'Terminar' } }
+      ];
+      
+      await whatsappService.sendInteractiveButtons(
+        to,
+        "¿Te interesa ver otras promociones disponibles?",
+        buttons
+      );
+      
+    } catch (error) {
+      console.error('Error en handleNameCapture:', error);
+      await whatsappService.sendMessage(
+        to,
+        'Ocurrió un error al procesar tu solicitud. Por favor intenta nuevamente.'
+      );
+    } finally {
+      // Mantener el estado para seguir el flujo
+      this.assistandState[to] = {
+        step: 'post_advisor_contact',
+        promotionType: this.assistandState[to]?.promotionType
+      };
+    }
+  }
 
   async handleContactAdvisorFlow(to, phoneNumber) {
     try {
@@ -341,7 +499,7 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
 
         // Enviar mensaje al asesor
         await whatsappService.sendMessage(
-          `529711374858`, // Número del asesor
+          `9711374858`, // Número del asesor
           `El usuario ${nameClient} con equipo ${model} e imei: ${imei} quiere contactar un asesor para resolver dudas, llamalo al ${to.replace('521', '52')}`
         );
         

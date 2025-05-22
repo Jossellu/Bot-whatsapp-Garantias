@@ -1,7 +1,7 @@
 node_modules/
 .env
 
-data/*
-!data/.gitkeep
+public/promociones/*
+!public/promociones/.gitkeep
 
 garantia/

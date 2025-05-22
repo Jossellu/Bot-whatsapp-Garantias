@@ -16,8 +16,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // 2. Servir archivos estáticos (verifica que la carpeta existe)
-const staticImagesPath = path.join(__dirname, '..', 'public', 'imagenes');
-app.use('/imagenes', express.static(staticImagesPath, {
+const staticImagesPath = path.join(__dirname, '..', 'public', 'promociones');
+app.use('/promociones', express.static(staticImagesPath, {
   maxAge: '1d', // Cache en navegadores/CDN por 1 día
   setHeaders: (res, path) => {
     if (path.endsWith('.png')) {
@@ -27,7 +27,7 @@ app.use('/imagenes', express.static(staticImagesPath, {
 }));
 
 // 3. Logger de acceso a imágenes (útil para debug)
-app.use('/imagenes', (req, res, next) => {
+app.use('/promociones', (req, res, next) => {
   console.log(`Solicitud de imagen: ${req.path}`);
   next();
 });
