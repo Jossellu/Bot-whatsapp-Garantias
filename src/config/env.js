@@ -20,6 +20,12 @@ export default {
   PROMOCIONES_FOLDER: path.join(__dirname, '../../data/promociones'),
   CLIENTES_FILE: path.join(__dirname, '../../data/clientes_contactados.csv'),
   
+  //configuracion de produccion
+  API_ENV: process.env.API_ENV || 'production', // 'sandbox' o 'production'
+  TEST_NUMBERS: ['5219711198002'], // Tu número en formato E.164
+  BUSINESS_PHONE: process.env.BUSINESS_PHONE, // Número de teléfono empresarial
+  
+  
   // Configuración de OpenAI
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
   PROMOCIONES_ACTIVAS: true,

@@ -21,6 +21,109 @@ class MessageHandler {
       'actualizacion': 'ACTUALIZACION DE CHIP',
       'portabilidad': 'PORTABILIDAD'
     };
+    this.PUBLICITY_SHEET_INDEX = 1; // Hoja 2 (0-based index)
+    this.PUBLICITY_TEXT_PATH = path.join(__dirname, '../public/publicidad/publicidad_info.txt');
+    this.PUBLICITY_IMAGE_PATH = `${config.BASE_URL}/publicidad/publicidad.jpg`;
+    this.initPublicityJob(); // Inicializar el trabajo de publicidad
+  }
+
+  initPublicityJob() {
+  // Programar la verificación diaria a las 12:00 PM
+  scheduleJob('0 12 * * *', async () => {
+    try {
+      console.log('Iniciando verificación de publicidad programada');
+      await this.processScheduledPublicity();
+    } catch (error) {
+      console.error('Error en el job de publicidad:', error);
+    }
+  });
+}
+
+  async processScheduledPublicity() {
+    try {
+      // 1. Configuración de autenticación
+      const serviceAccountAuth = new JWT({
+        email: config.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+        key: config.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+      });
+
+      // 2. Inicialización del documento
+      const doc = new GoogleSpreadsheet(config.GOOGLE_SHEET_ID, serviceAccountAuth);
+      await doc.loadInfo();
+      const sheet = doc.sheetsByIndex[this.PUBLICITY_SHEET_INDEX];
+      
+      // 3. Obtener todas las filas
+      const rows = await sheet.getRows();
+      console.log(`Filas encontradas en hoja de publicidad: ${rows.length}`);
+
+      // 4. Fecha actual en formato YYYY-MM-DD
+      const today = new Date().toISOString().split('T')[0];
+      
+      // 5. Leer archivo de texto con la publicidad
+      let publicityText = '¡Oferta especial para ti!';
+      try {
+        publicityText = fs.readFileSync(this.PUBLICITY_TEXT_PATH, 'utf-8');
+      } catch (error) {
+        console.error('Error leyendo archivo de publicidad:', error);
+      }
+
+      // 6. Filtrar y procesar filas
+      let messagesSent = 0;
+      
+      for (const row of rows) {
+        try {
+          const phoneNumber = row.get('no. telefonos');
+          const sendDate = row.get('fecha de envio');
+          
+          // Validar datos
+          if (!phoneNumber || !sendDate) continue;
+          
+          // Verificar si es la fecha correcta
+          if (sendDate !== today) continue;
+          
+          // Limpiar número de teléfono
+          const cleanNumber = `52${phoneNumber}`.replace(/\D/g, '');
+          
+          // Enviar imagen de publicidad
+          await whatsappService.sendImage(cleanNumber, this.PUBLICITY_IMAGE_PATH);
+          
+          // Enviar texto de publicidad
+          await whatsappService.sendMessage(cleanNumber, publicityText);
+          
+          // Enviar botón de más información
+          const buttons = [
+            { reply: { id: 'mas_info_publicidad', title: 'Dame más información' } },
+            { reply: { id: 'no_gracias_publicidad', title: 'No gracias' } }
+          ];
+          
+          await whatsappService.sendInteractiveButtons(
+            cleanNumber,
+            "¿Te interesa conocer más detalles sobre esta oferta?",
+            buttons
+          );
+          
+          // Registrar en el estado que viene de publicidad
+          this.assistandState[cleanNumber] = {
+            step: 'post_publicity',
+            source: 'scheduled_publicity'
+          };
+          
+          messagesSent++;
+          console.log(`Publicidad enviada a ${cleanNumber}`);
+          
+        } catch (error) {
+          console.error(`Error procesando fila de publicidad: ${error.message}`);
+        }
+      }
+
+      console.log(`Proceso de publicidad completado. Mensajes enviados: ${messagesSent}`);
+      return messagesSent;
+
+    } catch (error) {
+      console.error('Error en processScheduledPublicity:', error);
+      throw error;
+    }
   }
 
   initCleanupJob() {
@@ -316,7 +419,23 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
       "contactar": async () => {
         await whatsappService.sendMessage(to, "Ingresa tu número de teléfono correspondiente a tu equipo en garantía:");
         this.assistandState[to] = { step: 'contact_advisor' };
-      }
+      },
+
+      "dame más información|mas_info_publicidad": async () => {
+        await whatsappService.sendMessage(to, "Por favor, ¿cuál es tu nombre completo?");
+        this.assistandState[to] = {
+          step: 'capture_name',
+          source: 'publicity' // Diferenciar que viene de publicidad
+        };
+      },
+  
+      "no gracias|no_gracias_publicidad": async () => {
+        await whatsappService.sendMessage(
+          to,
+          "Gracias por tu interés. ¡Estaremos aquí cuando nos necesites!"
+        );
+        delete this.assistandState[to];
+      },
     };
 
     const normalizedOption = option.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -356,11 +475,13 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
       // 3. Obtener todas las filas
       const rows = await sheet.getRows();
       
-      // 4. Buscar el número en la segunda columna (posición 1 en _rawData)
+      // Buscar coincidencias en ambas columnas (phone number e imei)
       const warrantyRecords = rows.filter(row => {
-        const rowPhone = row._rawData[1]?.replace(/\D/g, ''); // Limpiar número
-        const searchPhone = phoneNumber.replace(/\D/g, ''); // Limpiar número buscado
-        return rowPhone === searchPhone;
+        const rowPhone = row._rawData[1]?.replace(/\D/g, ''); // Teléfono en 2da columna (índice 1)
+        const rowImei = row._rawData[3]?.replace(/\D/g, '');  // IMEI en 4ta columna (índice 3)
+        
+        // Comparar con ambas columnas
+        return rowPhone === cleanInput || rowImei === cleanInput;
       });
 
       if (warrantyRecords.length === 0) {
@@ -417,7 +538,19 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
 
   async handleNameCapture(to, userName) {
     try {
-      const promotionType = this.assistandState[to]?.promotionType;
+      // Verificar si el input parece un nombre válido
+      if (userInput.split(/\s+/).length < 2 || this.isGreeting(userInput)) {
+        await whatsappService.sendMessage(
+          to,
+          "Por favor ingresa tu nombre completo real (al menos nombre y apellido)."
+        );
+        return;
+      }
+
+      // Determinar el contexto (promoción normal o publicidad)
+      const context = this.assistandState[to]?.source === 'publicity' ? 
+        'PUBLICIDAD PROGRAMADA' : 
+        this.PROMOTION_TYPES[this.assistandState[to]?.promotionType];
       
       // Confirmar al usuario
       await whatsappService.sendMessage(
@@ -429,7 +562,7 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
       const userPhone = to.replace('521', '52'); // Formatear número
       await whatsappService.sendMessage(
         '529711198002', // Número del asesor
-        `El cliente ${userName} quiere más información acerca de ${this.PROMOTION_TYPES[promotionType]}. ` +
+        `El cliente ${userName} quiere más información acerca de ${context}. ` +
         `Por favor comunicate con él al ${userPhone}`
       );
       

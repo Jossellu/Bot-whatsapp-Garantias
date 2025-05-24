@@ -5,7 +5,13 @@ import config from '../config/env.js';
 class WhatsAppService {
   async sendMessage(to, message, messageId = null) {
     try {
-      await axios.post(
+      // Verificar si el número está en modo sandbox
+      if (config.API_ENV === 'sandbox' && !config.TEST_NUMBERS.includes(to)) {
+        console.warn(`Número ${to} no está en lista de pruebas. Mensaje no enviado.`);
+        return { warning: 'Number not in test list' };
+      }
+
+      const response = await axios.post(
         `https://graph.facebook.com/${config.API_VERSION}/${config.BUSINESS_PHONE}/messages`,
         {
           messaging_product: 'whatsapp',
@@ -21,11 +27,30 @@ class WhatsAppService {
           }
         }
       );
+      return response.data;
     } catch (error) {
       console.error('Error sending message:', error.response?.data || error.message);
+      throw error;
     }
   }
   
+  async checkBusinessAccountStatus() {
+    try {
+      const response = await axios.get(
+        `https://graph.facebook.com/${config.API_VERSION}/${config.BUSINESS_PHONE}`,
+        {
+          headers: {
+            Authorization: `Bearer ${config.API_TOKEN}`
+          }
+        }
+      );
+      console.log('Estado de la cuenta empresarial:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error al verificar estado de la cuenta:', error.response?.data || error.message);
+      throw error;
+    }
+  }
 
   async sendImage(to, imageUrl) {
     try {
