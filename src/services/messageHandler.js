@@ -462,25 +462,34 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
   }
 
 
-  async handleWarrantyFlow(to, phoneNumber) {
+  async handleWarrantyFlow(to, userInput) {
     try {
-      // 1. Configuración de autenticación
+      // Limpiar la entrada del usuario (eliminar todo excepto dígitos)
+      const cleanInput = userInput.replace(/\D/g, '');
+      
+      // Validar que la entrada tenga longitud adecuada (10 para teléfono o 15 para IMEI)
+      if (cleanInput.length !== 10 && cleanInput.length !== 15) {
+        await whatsappService.sendMessage(
+          to,
+          "Por favor ingresa un número de teléfono (10 dígitos) o IMEI (15 dígitos) válido."
+        );
+        return;
+      }
+
+      // Configuración de autenticación
       const serviceAccountAuth = new JWT({
         email: config.GOOGLE_SERVICE_ACCOUNT_EMAIL,
         key: config.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
         scopes: ['https://www.googleapis.com/auth/spreadsheets'],
       });
 
-      // 2. Inicialización del documento
+      // Inicialización del documento
       const doc = new GoogleSpreadsheet(config.GOOGLE_SHEET_ID, serviceAccountAuth);
-      
       await doc.loadInfo();
       const sheet = doc.sheetsByIndex[0];
-      
-      // 3. Obtener todas las filas
       const rows = await sheet.getRows();
       
-      // Buscar coincidencias en ambas columnas (phone number e imei)
+      // Buscar coincidencias en ambas columnas
       const warrantyRecords = rows.filter(row => {
         const rowPhone = row._rawData[1]?.replace(/\D/g, ''); // Teléfono en 2da columna (índice 1)
         const rowImei = row._rawData[3]?.replace(/\D/g, '');  // IMEI en 4ta columna (índice 3)
@@ -492,14 +501,16 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
       if (warrantyRecords.length === 0) {
         await whatsappService.sendMessage(
           to,
-          `❌ No se encontró ningún equipo en garantía asociado al número ${phoneNumber}`
+          `❌ No se encontró ningún equipo en garantía asociado a ${cleanInput}`
         );
       } else {
-        // Tomar el registro más reciente (último en la lista)
+        // Tomar el registro más reciente
         const latestRecord = warrantyRecords[warrantyRecords.length - 1];
-        const model = latestRecord._rawData[4]; // Posición 4: MODELO
-        const nameClient = latestRecord._rawData[2]; // Posición 2: Nombre
-        const imei = latestRecord._rawData[3];
+        const model = latestRecord._rawData[4];    // MODELO en 5ta columna (índice 4)
+        const nameClient = latestRecord._rawData[2]; // Nombre en 3ra columna (índice 2)
+        const imei = latestRecord._rawData[3];     // IMEI en 4ta columna (índice 3)
+        const phoneNumber = latestRecord._rawData[1]; // Teléfono en 2da columna (índice 1)
+        
         // Obtener el último estado no vacío
         let status = '';
         for (let i = latestRecord._rawData.length - 1; i >= 0; i--) {
