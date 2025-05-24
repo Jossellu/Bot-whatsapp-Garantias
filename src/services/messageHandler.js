@@ -5,7 +5,7 @@ import geminiService from './GeminiService.js';
 import { scheduleJob } from 'node-schedule';
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import { JWT } from 'google-auth-library'
-
+import path from 'path';
 
 class MessageHandler {
   constructor() {
