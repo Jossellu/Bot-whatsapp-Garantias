@@ -34,6 +34,62 @@ class WhatsAppService {
     }
   }
   
+  async sendTemplateMessage(to, templateName, parameters, languageCode = 'es') {
+    try {
+      // Validar parámetros obligatorios
+      if (!templateName || !languageCode) {
+        throw new Error('Nombre de plantilla o código de idioma faltante');
+      }
+
+      // Construir el payload correctamente
+      const payload = {
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: to,
+        type: 'template',
+        template: {
+          name: templateName,
+          language: {
+            code: languageCode
+          }
+        }
+      };
+
+      // Solo agregar componentes si hay parámetros
+      if (parameters && parameters.length > 0) {
+        payload.template.components = [{
+          type: 'body',
+          parameters: parameters.map(param => ({
+            type: 'text',
+            text: param.text.toString().trim() // Asegurar que sea string y sin espacios
+          }))
+        }];
+      }
+
+      console.log('Enviando plantilla con payload:', JSON.stringify(payload, null, 2));
+
+      const response = await axios.post(
+        `https://graph.facebook.com/${config.API_VERSION}/${config.BUSINESS_PHONE}/messages`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${config.API_TOKEN}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error detallado al enviar plantilla:', {
+        templateName,
+        parameters,
+        error: error.response?.data || error.message
+      });
+      throw error;
+    }
+  }
+
   async checkBusinessAccountStatus() {
     try {
       const response = await axios.get(
@@ -142,6 +198,24 @@ class WhatsAppService {
       console.error('Error al enviar botones:');
       console.error('Request:', error.config?.data);
       console.error('Response:', error.response?.data || error.message);
+      throw error;
+    }
+  }
+
+  async sendCustomMessage(payload) {
+    try {
+      const response = await axios({
+        method: 'POST',
+        url: `https://graph.facebook.com/${config.API_VERSION}/${config.BUSINESS_PHONE}/messages`,
+        headers: {
+          Authorization: `Bearer ${config.API_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        data: payload
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error sending custom message:', error.response?.data || error.message);
       throw error;
     }
   }

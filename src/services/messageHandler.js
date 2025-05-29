@@ -156,89 +156,88 @@ class MessageHandler {
   // Método para procesar las actualizaciones diarias de garantía
   async processDailyWarrantyUpdates() {
     try {
-      // 1. Configuración de autenticación
       const serviceAccountAuth = new JWT({
         email: config.GOOGLE_SERVICE_ACCOUNT_EMAIL,
         key: config.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
         scopes: ['https://www.googleapis.com/auth/spreadsheets'],
       });
 
-      // 2. Inicialización del documento
       const doc = new GoogleSpreadsheet(config.GOOGLE_SHEET_ID, serviceAccountAuth);
-      
       await doc.loadInfo();
       const sheet = doc.sheetsByIndex[0];
-      
-      // 3. Obtener todas las filas (no necesitamos encabezados)
-      const rows = await sheet.getRows();
-      console.log(`Total filas obtenidas: ${rows.length}`);
 
-      // 4. Fecha actual en formato YYYY-MM-DD
+      const rows = await sheet.getRows();
+      console.log(`📄 Total filas obtenidas: ${rows.length}`);
+
       const today = new Date().toISOString().split('T')[0];
-      
-      // 5. Filtrar y procesar filas
       let messagesSent = 0;
-      
+
       for (const row of rows) {
         try {
-          // Verificar si la fila es de hoy (posición 0 en _rawData)
-          if (!row._rawData[0] || !row._rawData[0].includes(today)) continue;
-          
-          // Extraer datos por posición fija
-          const phoneNumber = row._rawData[1]; // Posición 1: No.CLIENTE
-          const nameClient = row._rawData[2];
-          const model = row._rawData[4];       // Posición 4: MODELO
-          const imei = row._rawData[3];
-          
-          // Obtener el último valor no vacío del array
+          const data = row._rawData;
+
+          // Verificar si la fila corresponde a hoy
+          if (!data[0] || !data[0].includes(today)) continue;
+
+          const phoneNumber = data[1]?.toString().trim();
+          const nameclient = data[2]?.toString().trim() || 'Usuari@';
+          const imei = data[3]?.toString().trim() || 'imei';
+          const model = data[4]?.toString().trim() || 'no proporcionado';
+
+          // Buscar el último campo no vacío como status
           let status = '';
-          for (let i = row._rawData.length - 1; i >= 0; i--) {
-            if (row._rawData[i]?.trim()) {
-              status = row._rawData[i];
+          for (let i = data.length - 1; i >= 0; i--) {
+            const val = data[i]?.toString().trim();
+            if (val) {
+              status = val;
               break;
             }
           }
 
-          // Validar datos mínimos
-          if (!phoneNumber || !nameClient || !model || !status || !imei) {
-            console.warn(`Fila incompleta - Datos: ${JSON.stringify(row._rawData)}`);
+          const parameters = [
+            { type: 'text', text: nameclient },
+            { type: 'text', text: model },
+            { type: 'text', text: imei },
+            { type: 'text', text: status }
+          ];
+
+          // Validar que ningún parámetro esté vacío
+          const validParams = parameters.every(p => typeof p.text === 'string' && p.text.trim() !== '');
+          if (!phoneNumber || !validParams) {
+            console.warn('❌ Datos incompletos o inválidos:', {
+              phoneNumber, nameclient, model, imei, status
+            });
             continue;
           }
 
-          // Enviar mensaje
-          await whatsappService.sendMessage(
-            `52${phoneNumber}`.replace(/\D/g, ''), // Limpiar número
-            `✨ *Estimad@ ${nameClient || 'cliente'}* 
-✨Tenemos una actualizacion para el estatus de tu equipo: 
+          const formattedNumber = `52${phoneNumber}`.replace(/\D/g, '');
+          console.log(`📤 Enviando a ${formattedNumber} con:`, parameters);
 
-📱*Equipo en garantía:* "${model || 'Modelo no especificado'}"
-
-*IMEI:* "${imei || 'Imei no especificado'}"
-
-🔄 *Estado de garantía:* "${status || 'Estado no disponible'}" 
-            
-ℹ️Para más información o asistencia, no dudes en responder a este mensaje.
-_¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del Istmo`
+          await whatsappService.sendTemplateMessage(
+            formattedNumber,
+            'actualizacion_garantia',
+            parameters,
+            'es'
           );
-          
+
           messagesSent++;
-          console.log(`Mensaje enviado a ${phoneNumber} sobre modelo ${model}`);
+          console.log(`✅ Mensaje enviado a ${phoneNumber}`);
 
         } catch (error) {
-          console.error(`Error procesando fila: ${error.message}`);
+          console.error(`⚠️ Error procesando fila: ${error.message}`);
           console.error('Datos de la fila:', row._rawData);
         }
       }
 
-      console.log(`Proceso completado. Mensajes enviados: ${messagesSent}`);
+      console.log(`✅ Proceso completado. Mensajes enviados: ${messagesSent}`);
       return messagesSent;
 
     } catch (error) {
-      console.error('Error en processDailyWarrantyUpdates:', error);
+      console.error('❌ Error en processDailyWarrantyUpdates:', error);
       throw error;
     }
   }
-      
+
 
   async handleIncomingMessage(message, senderInfo) {
     const fromNumber = message.from.slice(0, 2) + message.from.slice(3);
@@ -269,11 +268,18 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
       }else if (this.assistandState[fromNumber]?.step === "capture_name") {
         await this.handleNameCapture(fromNumber, text);
       }
-
-    } else if (message?.type === 'interactive') {
-      const option = message?.interactive?.button_reply?.title.toLowerCase().trim();
-      await this.handleMenuOption(fromNumber, option, messageId);
-    } 
+    }if (message?.type === 'interactive') {
+      const interactiveType = message.interactive?.type;
+      const fromNumber = message.from.slice(0, 2) + message.from.slice(3);
+      
+      if (interactiveType === 'list_reply') {
+        const selectedId = message.interactive.list_reply.id;
+        await this.handleMenuOption(fromNumber, selectedId, message.id);
+      } else if (interactiveType === 'button_reply') {
+        const option = message.interactive.button_reply.title.toLowerCase().trim();
+        await this.handleMenuOption(fromNumber, option, message.id);
+      }
+    }
 
     await whatsappService.markAsRead(messageId);
   }
@@ -320,12 +326,59 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
   }
 
   async sendPromotionsMenu(to) {
-    const buttons = [
-      { reply: { id: 'promo1', title: 'PLANES TARIFARIOS' } },
-      { reply: { id: 'promo2', title: 'ACTUALIZACION DE CHIP' } },
-      { reply: { id: 'promo3', title: 'PORTABILIDAD' } }
-    ];
-    await whatsappService.sendInteractiveButtons(to, "🏷️ Nuestras Promociones:", buttons);
+    try {
+      const listMessage = {
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: to,
+        type: 'interactive',
+        interactive: {
+          type: 'list',
+          header: {
+            type: 'text',
+            text: '🏷️ Nuestras Promociones'
+          },
+          body: {
+            text: 'Selecciona una opción para ver más detalles:'
+          },
+          action: {
+            button: 'Ver Promociones',
+            sections: [
+              {
+                title: 'Opciones Disponibles',
+                rows: [
+                  {
+                    id: 'promo1',
+                    title: 'PLANES TARIFARIOS',
+                    description: 'Conoce nuestros planes'
+                  },
+                  {
+                    id: 'promo2',
+                    title: 'ACTUALIZACION DE CHIP',
+                    description: 'Actualiza tu chip'
+                  },
+                  {
+                    id: 'promo3',
+                    title: 'PORTABILIDAD',
+                    description: 'Cambia de compañía'
+                  },
+                  {
+                    id: 'promo4',
+                    title: 'CAMBIO DE EQUIPO',
+                    description: 'Nuevo equipo con mismo número'
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      };
+
+      await whatsappService.sendCustomMessage(listMessage);
+    } catch (error) {
+      console.error('Error al enviar menú de promociones:', error);
+      throw error;
+    }
   }
 
 
@@ -365,20 +418,56 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
         };
       },
 
-      "promoción 1|planes tarifarios": async () => {
-        const fileUrl = `${config.BASE_URL}/promociones/promo1.jpg`;
-        await whatsappService.sendImage(to,fileUrl);
-        await whatsappService.sendMessage(to, 
-          `🔥 *PLANES TARIFARIOS* 🔥\n\n` +
-          `📌 aprovecha la promocion de recargas \n\n` +
-          `📆 Válida hasta: XX/XX/XXXX\n` +
-          `📍 Aplican términos y condiciones\n\n` +
-          `¡Aprovecha esta gran oportunidad!`
+      "promo1": async () => {
+        await whatsappService.sendMessage(
+          to,
+          "Tenemos disponible para usted los siguientes planes:"
         );
-        await this.sendPostPromotionMenu(to, 'planes tarifarios');
+
+        const buttons = [
+          { reply: { id: 'telcel_libre', title: 'TELCEL LIBRE' } },
+          { reply: { id: 'internet_en_casa', title: 'INTERNET EN CASA' } }
+        ];
+
+        await whatsappService.sendInteractiveButtons(to, "Seleccione una opción:", buttons);
+
+        this.assistandState[to] = {
+          step: 'planes_tarifarios'
+        };
       },
 
-      "promoción 2|actualizacion": async () => {
+
+      "telcel libre|telcel_libre": async () => {
+        const fileUrl = `${config.BASE_URL}/promociones/telcel_libre.jpg`;
+
+        await whatsappService.sendImage(to, fileUrl);
+        await whatsappService.sendMessage(to,
+          `📶 *PLAN TELCEL LIBRE*\n\n` +
+          `✅ Minutos, mensajes y datos ilimitados.\n` +
+          `📅 Vigencia: 30 días\n` +
+          `💲 Costo: $XXX MXN\n\n` +
+          `📍 Disponible en todos nuestros puntos de venta.`
+        );
+
+        await this.sendPostPromotionMenu(to, 'telcel_libre');
+      },
+
+      "internet en casa|internet_en_casa": async () => {
+        const fileUrl = `${config.BASE_URL}/promociones/internet_casa.jpg`;
+
+        await whatsappService.sendImage(to, fileUrl);
+        await whatsappService.sendMessage(to,
+          `🏠 *INTERNET EN CASA*\n\n` +
+          `📦 Paquete de datos de alta velocidad\n` +
+          `📡 Sin instalación, solo conectar y usar\n` +
+          `💲 Desde $XXX al mes\n\n` +
+          `📍 Consulta disponibilidad en tu zona.`
+        );
+
+        await this.sendPostPromotionMenu(to, 'internet_en_casa');
+      },
+      
+      "promo2": async () => {
         const fileUrl = `${config.BASE_URL}/promociones/promo1.jpg`;
         await whatsappService.sendImage(to,fileUrl);
         await whatsappService.sendMessage(to, 
@@ -391,7 +480,20 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
         await this.sendPostPromotionMenu(to, 'actualizacion');
       },
 
-      "promoción 3|portabilidad": async () => {
+      "promo3": async () => {
+        const fileUrl = `${config.BASE_URL}/promociones/promo1.jpg`;
+        await whatsappService.sendImage(to,fileUrl);
+        await whatsappService.sendMessage(to, 
+          `🔥 *PORTABILIDAD* 🔥\n\n` +
+          `📌 Descripción detallada de la promoción 3\n\n` +
+          `📆 Válida hasta: XX/XX/XXXX\n` +
+          `📍 Aplican términos y condiciones\n\n` +
+          `¡Oferta por tiempo limitado!`
+        );
+        await this.sendPostPromotionMenu(to, 'portabilidad');
+      },
+
+      "promo4": async () => {
         const fileUrl = `${config.BASE_URL}/promociones/promo1.jpg`;
         await whatsappService.sendImage(to,fileUrl);
         await whatsappService.sendMessage(to, 
@@ -410,11 +512,11 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
       },
 
       "garantia|seguimiento": async () => {
-        await whatsappService.sendMessage(to, "Ingresa tu número de teléfono correspondiente a tu equipo en garantía:");
+        await whatsappService.sendMessage(to, "Ingresa tu *número de teléfono* o *imei* correspondiente a tu equipo en garantía:");
         this.assistandState[to] = { step: 'warranty' };
       },
       "hacer otro seguimien|hacer otro seguimiento": async () => {
-        await whatsappService.sendMessage(to, "Ingresa tu número de teléfono correspondiente a tu equipo en garantía:");
+        await whatsappService.sendMessage(to, "Ingresa tu *número de teléfono* o *imei* correspondiente a tu equipo en garantía:");
         this.assistandState[to] = { step: 'warranty' };
       },
       "terminar": async () => {
@@ -555,7 +657,7 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
   async handleNameCapture(to, userName) {
     try {
       // Verificar si el input parece un nombre válido
-      if (userInput.split(/\s+/).length < 2 || this.isGreeting(userInput)) {
+      if (userName.split(/\s+/).length < 2 || this.isGreeting(userName)) {
         await whatsappService.sendMessage(
           to,
           "Por favor ingresa tu nombre completo real (al menos nombre y apellido)."
@@ -577,7 +679,7 @@ _¡Gracias por confiar en nuestro servicio!_ 🔧 Tecnología Inalámbrica del I
       // Enviar notificación al asesor
       const userPhone = to.replace('521', '52'); // Formatear número
       await whatsappService.sendMessage(
-        '529711198002', // Número del asesor
+        '529712641885', // Número del asesor
         `El cliente ${userName} quiere más información acerca de ${context}. ` +
         `Por favor comunicate con él al ${userPhone}`
       );
