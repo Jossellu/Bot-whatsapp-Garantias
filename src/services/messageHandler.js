@@ -276,7 +276,7 @@ class MessageHandler {
         const selectedId = message.interactive.list_reply.id;
         await this.handleMenuOption(fromNumber, selectedId, message.id);
       } else if (interactiveType === 'button_reply') {
-        const option = message.interactive.button_reply.title.toLowerCase().trim();
+        const option = message.interactive.button_reply.id.toLowerCase().trim();
         await this.handleMenuOption(fromNumber, option, message.id);
       }
     }
