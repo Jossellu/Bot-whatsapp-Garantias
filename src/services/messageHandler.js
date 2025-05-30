@@ -326,7 +326,7 @@ class MessageHandler {
   }
 
 
-//#########################################  BOTONES  #################################
+
 
   async sendPromotionsMenu(to) {
     try {
@@ -633,7 +633,7 @@ class MessageHandler {
     }
   }
 
-//######################################### SEGUIMIENTO DE GARANTIA ############################################################
+
 
   async handleWarrantyFlow(to, userInput) {
     try {
@@ -726,7 +726,6 @@ class MessageHandler {
   }
 
 
-//################################################## CONTACTAR A VENDEDOR DE PROMOCIONES ##########################################
 
   async handleNameCapture(to, userName) {
     try {
@@ -785,7 +784,7 @@ class MessageHandler {
     }
   }
 
-  //######################################## CONTACTAR A GARANTIAS ########################################################
+
 
 
   async handleContactAdvisorFlow(to, phoneNumber) {
