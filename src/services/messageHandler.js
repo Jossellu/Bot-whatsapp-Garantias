@@ -510,7 +510,7 @@ class MessageHandler {
           },
 
       "promo2": async () => {
-        const fileUrl = `${config.BASE_URL}/promociones/promo1.jpg`;
+        const fileUrl = `${config.BASE_URL}/promociones/promo1.jpeg`;
         await whatsappService.sendImage(to,fileUrl);
         await whatsappService.sendMessage(to, 
             `👋 ¡Hola!\n\n` +
@@ -531,7 +531,7 @@ class MessageHandler {
       },
 
       "promo3": async () => {
-        const fileUrl = `${config.BASE_URL}/promociones/promo3.jpg`;
+        const fileUrl = `${config.BASE_URL}/promociones/promo3.jpeg`;
         await whatsappService.sendImage(to,fileUrl);
         await whatsappService.sendMessage(to, 
             `👋 ¡Hola!\n\n` +
@@ -553,7 +553,7 @@ class MessageHandler {
       },
 
       "promo4": async () => {
-        const fileUrl = `${config.BASE_URL}/promociones/promo4.jpg`;
+        const fileUrl = `${config.BASE_URL}/promociones/promo4.jpeg`;
         await whatsappService.sendImage(to,fileUrl);
         await whatsappService.sendMessage(to, 
             `👋 ¡Hola!\n\n` +
