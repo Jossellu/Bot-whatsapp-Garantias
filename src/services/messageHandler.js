@@ -325,6 +325,9 @@ class MessageHandler {
       await whatsappService.sendInteractiveButtons(to, "📋 Menú Principal:", buttons);
   }
 
+
+//#########################################  BOTONES  #################################
+
   async sendPromotionsMenu(to) {
     try {
       const listMessage = {
@@ -425,7 +428,7 @@ class MessageHandler {
         await this.sendPromotionsMenu(to);
       },
 
-      "dame mas informacion|mas_info": async () => {
+      "quiero contratar|mas_info|": async () => {
         await whatsappService.sendMessage(to, "Por favor, ¿cuál es tu nombre completo y de que parte de la republica nos escribes?");
         this.assistandState[to] = {
           step: 'capture_name',
@@ -502,6 +505,7 @@ class MessageHandler {
           await whatsappService.sendImage(to, `${config.BASE_URL}/promociones/modem1.jpeg`);
           await whatsappService.sendImage(to, `${config.BASE_URL}/promociones/modem2.jpeg`);
           await whatsappService.sendImage(to, `${config.BASE_URL}/promociones/modem3.jpeg`);
+          await new Promise(resolve => setTimeout(resolve, 3000)); 
           await this.sendPostPromotionMenu(to, 'ver_modems');
           },
 
@@ -629,6 +633,7 @@ class MessageHandler {
     }
   }
 
+//######################################### SEGUIMIENTO DE GARANTIA ############################################################
 
   async handleWarrantyFlow(to, userInput) {
     try {
@@ -720,6 +725,9 @@ class MessageHandler {
     }
   }
 
+
+//################################################## CONTACTAR A VENDEDOR DE PROMOCIONES ##########################################
+
   async handleNameCapture(to, userName) {
     try {
       // Verificar si el input parece un nombre válido
@@ -745,7 +753,7 @@ class MessageHandler {
       // Enviar notificación al asesor
       const userPhone = to.replace('521', '52'); // Formatear número
       await whatsappService.sendMessage(
-        '529712641885', // Número del asesor
+        '529711269180', // Número del asesor
         `El cliente ${userName} quiere más información acerca de ${context}. ` +
         `Por favor comunicate con él al ${userPhone}`
       );
@@ -776,6 +784,9 @@ class MessageHandler {
       };
     }
   }
+
+  //######################################## CONTACTAR A GARANTIAS ########################################################
+
 
   async handleContactAdvisorFlow(to, phoneNumber) {
     try {
