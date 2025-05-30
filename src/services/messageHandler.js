@@ -384,7 +384,7 @@ class MessageHandler {
 
   async sendPostPromotionMenu(to, promotionType) {
     const buttons = [
-      { reply: { id: 'mas_info', title: 'Dame más información' } },
+      { reply: { id: 'mas_info', title: 'Quiero Contratar' } },
       { reply: { id: 'otra_promo', title: 'Ver otra promoción' } },
       { reply: { id: 'terminar', title: 'Terminar' } }
     ];
@@ -442,11 +442,20 @@ class MessageHandler {
 
         await whatsappService.sendImage(to, fileUrl);
         await whatsappService.sendMessage(to,
-          `📶 *PLAN TELCEL LIBRE*\n\n` +
-          `✅ Minutos, mensajes y datos ilimitados.\n` +
-          `📅 Vigencia: 30 días\n` +
-          `💲 Costo: $XXX MXN\n\n` +
-          `📍 Disponible en todos nuestros puntos de venta.`
+          `👋 ¿Cansado de los plazos forzosos en tu plan de celular?
+
+          ¡Tengo una excelente noticia para ti! Con los nuevos Planes Telcel Libre, ¡dile adiós a los amarres y disfruta de total libertad! 🚀
+
+          Aquí lo más importante:
+
+          ¡Sin plazos forzosos! Cambia o cancela cuando quieras, ¡tú decides!
+          Velocidad 5G real: Navega a la máxima velocidad y sin interrupciones.
+          Gigas para todo: Desde 4 GB hasta 55 GB (¡o 40 GB en el plan VIP!).
+          Redes Sociales Ilimitadas: WhatsApp, Facebook, Instagram, X (antes Twitter), ¡sin gastar tus gigas! 🤳
+          Minutos y SMS ilimitados: Habla y chatea sin preocuparte en México, EE. UU. y Canadá.
+          ¡Recibe Cashback! Te regresamos parte de tu renta para usarlo en equipos, suscripciones o servicios Telcel.
+          Claro Video con Paramount+ y Claro Drive: ¡Entretenimiento y almacenamiento incluidos!
+          ¿Listo para la libertad de un plan sin ataduras? ¡Envíame un mensaje para darte todos los detalles y ayudarte a contratar tu Plan Telcel Libre hoy mismo!`
         );
 
         await this.sendPostPromotionMenu(to, 'telcel_libre');
@@ -457,25 +466,40 @@ class MessageHandler {
 
         await whatsappService.sendImage(to, fileUrl);
         await whatsappService.sendMessage(to,
-          `🏠 *INTERNET EN CASA*\n\n` +
-          `📦 Paquete de datos de alta velocidad\n` +
-          `📡 Sin instalación, solo conectar y usar\n` +
-          `💲 Desde $XXX al mes\n\n` +
-          `📍 Consulta disponibilidad en tu zona.`
+          `👋 ¿Necesitas internet de alta velocidad en casa sin complicaciones?
+
+          Con el Plan de Renta Internet en Casa de Telcel, ¡tener WiFi es más fácil que nunca! 🚀
+
+          Olvídate de instalaciones complejas y largos procesos. Con este plan, tú solo:
+
+          Conectas y listo: ¡No necesitas técnicos! Solo enchufa tu módem y empieza a navegar.
+          Sin cables molestos: Disfruta de la libertad de un módem inalámbrico que puedes mover donde lo necesites.
+          Velocidad y estabilidad: Conéctate con la red de Telcel, reconocida por su cobertura y rapidez.
+          Internet ilimitado: ¡Navega, trabaja, estudia y diviértete sin preocuparte por los gigas!
+          Contratación sencilla: Adquiere tu módem y empieza a disfrutar en minutos.
+          Ideal para toda la familia, para trabajar desde casa o para tus ratos de ocio con series y películas.
+
+          ¡Mándame un mensaje para conocer los planes disponibles y las velocidades que tenemos para tu hogar! Estoy aquí para ayudarte a elegir la mejor opción.`
         );
 
         await this.sendPostPromotionMenu(to, 'internet_en_casa');
       },
-      
+
       "promo2": async () => {
         const fileUrl = `${config.BASE_URL}/promociones/promo1.jpg`;
         await whatsappService.sendImage(to,fileUrl);
         await whatsappService.sendMessage(to, 
-          `🔥 *ACTUALIZACION DE CHIP* 🔥\n\n` +
-          `📌 Descripción detallada de la promoción 2\n\n` +
-          `📆 Válida hasta: XX/XX/XXXX\n` +
-          `📍 Aplican términos y condiciones\n\n` +
-          `¡No dejes pasar esta oferta!`
+          `¿Sabías que actualizar tu chip Telcel te puede dar una mejor experiencia en tu celular? ¡Es rápido, sencillo y tiene grandes beneficios!
+
+            Aquí te cuento por qué te conviene:
+
+            ¡Acceso a la Red 5G! Si tu chip es antiguo, podrías estar perdiéndote la velocidad más alta de Telcel. Con un chip nuevo, estarás listo para navegar en la red 5G más grande del país (si tu equipo es compatible y la cobertura está disponible en tu zona).
+            Mejor señal y rendimiento: Los chips más recientes están optimizados para ofrecerte una conexión más estable y clara, tanto en llamadas como en datos.
+            Máxima seguridad: Un chip actualizado te brinda las últimas mejoras en seguridad para proteger tu información.
+            ¡Es gratis y conservas tu número! Mantienes tu mismo número de siempre, tus contactos y todo lo que tienes.
+            No dejes que un chip viejo te impida disfrutar de todo el potencial de tu smartphone y de la red Telcel.
+
+            ¡Mándame un mensaje para ayudarte a hacer el cambio! Te explico cómo en unos minutos.`
         );
         await this.sendPostPromotionMenu(to, 'actualizacion');
       },
@@ -484,11 +508,21 @@ class MessageHandler {
         const fileUrl = `${config.BASE_URL}/promociones/promo1.jpg`;
         await whatsappService.sendImage(to,fileUrl);
         await whatsappService.sendMessage(to, 
-          `🔥 *PORTABILIDAD* 🔥\n\n` +
-          `📌 Descripción detallada de la promoción 3\n\n` +
-          `📆 Válida hasta: XX/XX/XXXX\n` +
-          `📍 Aplican términos y condiciones\n\n` +
-          `¡Oferta por tiempo limitado!`
+          `👋 ¿Sabías que puedes cambiarte a Telcel y conservar tu mismo número de siempre? ¡Es súper fácil y rápido!
+
+Con la Portabilidad Telcel, te traemos todos los beneficios de la red más grande de México y una ¡súper promoción para tu prepago!
+
+Aquí las ventajas de unirte a Telcel:
+
+Tu mismo número: ¡No necesitas avisar a nadie! Mantienes tu número de siempre.
+La mejor cobertura: Disfruta de la red con mayor alcance y velocidad en México, incluyendo la Red 5G (si tu equipo es compatible).
+¡Triple de beneficios en tus recargas! 🤩
+Al portar tu número a Telcel en prepago Amigo, disfruta de ¡el triple de Gigas y beneficios en tus recargas de $50 o más durante los primeros 5 meses! Así es, más internet, más redes sociales y más libertad.
+Planes y paquetes a tu medida: Tenemos opciones de prepago y planes de renta con gigas, redes sociales ilimitadas, llamadas y SMS sin límite.
+Beneficios exclusivos: Acceso a servicios como Claro Video y Claro Drive.
+¡Olvídate de las complicaciones y únete a la red líder con esta increíble promoción!
+
+Mándame un mensaje para darte todos los detalles y ayudarte con tu cambio. ¡Es más sencillo de lo que imaginas!`
         );
         await this.sendPostPromotionMenu(to, 'portabilidad');
       },
@@ -744,9 +778,9 @@ class MessageHandler {
       } else {
         // Tomar el registro más reciente (último en la lista)
         const latestRecord = warrantyRecords[warrantyRecords.length - 1];
-        const model = latestRecord._rawData[4]; // Posición 4: MODELO
+        const model = latestRecord._rawData[4] || 'modelo no proporcionado'; // Posición 4: MODELO
         const nameClient = latestRecord._rawData[2]; // Posición 2: Nombre
-        const imei = latestRecord._rawData[3]; // Posición 3: IMEI
+        const imei = latestRecord._rawData[3] || 'imei no proporcionado'; // Posición 3: IMEI
 
         // Enviar mensaje al asesor
         await whatsappService.sendMessage(
