@@ -751,12 +751,16 @@ class MessageHandler {
       
       // Enviar notificación al asesor
       const userPhone = to.replace('521', '52'); // Formatear número
-      await whatsappService.sendMessage(
-        '529711269180', // Número del asesor
-        `El cliente ${userName} quiere más información acerca de ${context}. ` +
-        `Por favor comunicate con él al ${userPhone}`
-      );
-      
+      const message = `El cliente ${userName} quiere más información acerca de ${context}. ` +
+                `Por favor comunícate con él al ${userPhone}`;
+
+      // Lista de asesores a notificar
+      const advisors = ['529711269180', '529711251367'];
+
+      // Enviar el mensaje a cada asesor
+      for (const advisor of advisors) {
+        await whatsappService.sendMessage(advisor, message);
+      }
       // Mostrar menú reducido (solo ver otras promociones o terminar)
       const buttons = [
         { reply: { id: 'otra_promo', title: 'Ver otra promoción' } },
