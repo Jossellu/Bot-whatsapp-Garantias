@@ -24,7 +24,11 @@ class MessageHandler {
     this.PROMOTION_TYPES = {
       'planes tarifarios': 'PLANES TARIFARIOS',
       'actualizacion': 'ACTUALIZACION DE CHIP',
-      'portabilidad': 'PORTABILIDAD'
+      'portabilidad': 'PORTABILIDAD',
+      'telcel_libre':'TELCEL LIBRE',
+      'internet_en_casa': 'INERNET EN CASA',
+      'cambio_de_equipo': 'CAMBIO DE EQUIPO CON MISMO NUMERO'
+
     };
     this.PUBLICITY_SHEET_INDEX = 1; // Hoja 2 (0-based index)
     this.PUBLICITY_TEXT_PATH = path.join(__dirname, '../public/publicidad/publicidad_info.txt');
@@ -506,7 +510,11 @@ class MessageHandler {
           await whatsappService.sendImage(to, `${config.BASE_URL}/promociones/modem2.jpeg`);
           await whatsappService.sendImage(to, `${config.BASE_URL}/promociones/modem3.jpeg`);
           await new Promise(resolve => setTimeout(resolve, 3000)); 
-          await this.sendPostPromotionMenu(to, 'ver_modems');
+          await whatsappService.sendInteractiveButtons(to, "¿Te interesa contratar alguno de estos?", [
+            { reply: { id: 'mas_info', title: 'Quiero Contratar' } },
+            { reply: { id: 'otra_promo', title: 'Ver otra promoción' } },
+            { reply: { id: 'terminar', title: 'Terminar' } }
+          ]);
           },
 
       "promo2": async () => {
@@ -573,7 +581,7 @@ class MessageHandler {
             `tiiexpress.catalog.kyte.site\n\n` +
             `💬 ¡Mándame un mensaje para ayudarte a elegir tu próximo smartphone! 😉`
         );
-        await this.sendPostPromotionMenu(to, 'portabilidad');
+        await this.sendPostPromotionMenu(to, 'cambio_de_equipo');
       },
 
       "promoción|otra_promo|ver otra promocion": async () => {
