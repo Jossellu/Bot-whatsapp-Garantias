@@ -428,7 +428,7 @@ class MessageHandler {
         await this.sendPromotionsMenu(to);
       },
 
-      "quiero contratar|mas_info|": async () => {
+      "mas_info|dame mas informacion": async () => {
         await whatsappService.sendMessage(to, "Por favor, ¿cuál es tu nombre completo y de que parte de la republica nos escribes?");
         this.assistandState[to] = {
           step: 'capture_name',
