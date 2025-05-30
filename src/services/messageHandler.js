@@ -456,22 +456,19 @@ class MessageHandler {
         const fileUrl = `${config.BASE_URL}/promociones/telcel_libre.jpg`;
 
         await whatsappService.sendImage(to, fileUrl);
-        await whatsappService.sendMessage(to,
-          `👋 ¿Cansado de los plazos forzosos en tu plan de celular?`+
-
-          `¡Tengo una excelente noticia para ti! Con los nuevos Planes Telcel Libre, ¡dile adiós a los amarres y disfruta de total libertad! 🚀`+
-
-          `Aquí lo más importante:`+
-
-          `*¡Sin plazos forzosos!* Cambia o cancela cuando quieras, ¡tú decides!`+
-          `*Velocidad 5G real:* Navega a la máxima velocidad y sin interrupciones.`+
-          `*Gigas para todo:* Desde 4 GB hasta 55 GB (¡o 40 GB en el plan VIP!).`+
-          `*Redes Sociales Ilimitadas:* WhatsApp, Facebook, Instagram, X (antes Twitter), ¡sin gastar tus gigas! 🤳`+
-          `*Minutos y SMS ilimitados:* Habla y chatea sin preocuparte en México, EE. UU. y Canadá.`+
-          `*¡Recibe Cashback!* Te regresamos parte de tu renta para usarlo en equipos, suscripciones o servicios Telcel.`+
-          `*Claro Video con Paramount+ y Claro Drive:* ¡Entretenimiento y almacenamiento incluidos!`+
-
-          `*¿Listo para la libertad de un plan sin ataduras? ¡Envíame un mensaje para darte todos los detalles y ayudarte a contratar tu Plan Telcel Libre hoy mismo!*`
+        await whatsappService.sendMessage(to, 
+            `👋 ¿Cansado de los **plazos forzosos** en tu plan de celular? 😩\n\n` +
+            `¡Tengo una **excelente noticia** para ti! Con los nuevos **Planes Telcel Libre**, ¡dile adiós a los amarres y disfruta de **total libertad**! 🚀\n\n` +
+            `Aquí lo más importante: 👇\n\n` +
+            `✅ **¡Sin plazos forzosos!** Cambia o cancela cuando quieras, ¡tú decides!\n` +
+            `⚡️ **Velocidad 5G real**: Navega a la máxima velocidad y sin interrupciones.\n` +
+            `📱 **Gigas para todo**: Desde 4 GB hasta 55 GB (¡o 40 GB en el plan VIP!).\n` +
+            ` unlimited **Redes Sociales Ilimitadas**: WhatsApp, Facebook, Instagram, X (antes Twitter), ¡sin gastar tus gigas! 🤳\n` +
+            `📞 **Minutos y SMS ilimitados**: Habla y chatea sin preocuparte en México, EE. UU. y Canadá.\n` +
+            `💰 **¡Recibe Cashback!**: Te regresamos parte de tu renta para usarlo en equipos, suscripciones o servicios Telcel.\n` +
+            `🍿 **Claro Video con Paramount+ y Claro Drive**: ¡Entretenimiento y almacenamiento incluidos!\n\n` +
+            `¿Listo para la libertad de un plan sin ataduras? ✨\n\n` +
+            `💬 ¡Envíame un mensaje para darte todos los detalles y ayudarte a contratar tu **Plan Telcel Libre** hoy mismo! 😉`
         );
 
         await this.sendPostPromotionMenu(to, 'telcel_libre');
@@ -481,21 +478,17 @@ class MessageHandler {
         const fileUrl = `${config.BASE_URL}/promociones/internet_casa.jpg`;
 
         await whatsappService.sendImage(to, fileUrl);
-        await whatsappService.sendMessage(to,
-          `👋 ¿Necesitas internet de alta velocidad en casa sin complicaciones?`+
-
-          `Con el Plan de Renta Internet en Casa de Telcel, ¡tener WiFi es más fácil que nunca! 🚀`+
-
-          `Olvídate de instalaciones complejas y largos procesos. Con este plan, tú solo:`+
-
-          `Conectas y listo: ¡No necesitas técnicos! Solo enchufa tu módem y empieza a navegar.`+
-          `Sin cables molestos: Disfruta de la libertad de un módem inalámbrico que puedes mover donde lo necesites.`+
-          `Velocidad y estabilidad: Conéctate con la red de Telcel, reconocida por su cobertura y rapidez.`+
-          `Internet ilimitado: ¡Navega, trabaja, estudia y diviértete sin preocuparte por los gigas!`+
-          `Contratación sencilla: Adquiere tu módem y empieza a disfrutar en minutos.`+
-          `Ideal para toda la familia, para trabajar desde casa o para tus ratos de ocio con series y películas.`+
-
-          `¡Mándame un mensaje para conocer los planes disponibles y las velocidades que tenemos para tu hogar! Estoy aquí para ayudarte a elegir la mejor opción.`
+        await whatsappService.sendMessage(to, 
+            `👋 ¿Necesitas **internet de alta velocidad en casa** sin complicaciones? 🤔\n\n` +
+            `¡Con el **Plan de Renta Internet en Casa de Telcel**, tener WiFi es más fácil que nunca! 🚀\n\n` +
+            `Olvídate de instalaciones complejas y largos procesos. Con este plan, tú solo:\n\n` +
+            `🔌 **Conectas y listo**: ¡No necesitas técnicos! Solo enchufa tu módem y empieza a navegar.\n` +
+            ` libertad de un módem inalámbrico que puedes mover donde lo necesites.\n` +
+            `💨 **Velocidad y estabilidad**: Conéctate con la red de Telcel, reconocida por su cobertura y rapidez.\n` +
+            ` limitless **Internet ilimitado**: ¡Navega, trabaja, estudia y diviértete sin preocuparte por los gigas!\n` +
+            `✍️ **Contratación sencilla**: Adquiere tu módem y empieza a disfrutar en minutos.\n\n` +
+            `Ideal para toda la familia, para trabajar desde casa o para tus ratos de ocio con series y películas. 👨‍👩‍👧‍👦💻🎬\n\n` +
+            `💬 ¡Mándame un mensaje para conocer los planes disponibles y las velocidades que tenemos para tu hogar! Estoy aquí para ayudarte a elegir la mejor opción. 😉`
         );
 
         await this.sendPostModemsMenu(to, 'internet_en_casa');
@@ -516,20 +509,19 @@ class MessageHandler {
         const fileUrl = `${config.BASE_URL}/promociones/promo1.jpg`;
         await whatsappService.sendImage(to,fileUrl);
         await whatsappService.sendMessage(to, 
-          `¿Sabías que actualizar tu chip Telcel te puede dar una mejor experiencia en tu celular? ¡Es rápido, sencillo y tiene grandes beneficios!`+
-
-          `Aquí te cuento por qué te conviene:`+
-
-          `¡Acceso a la Red 5G! Si tu chip es antiguo, podrías estar perdiéndote la velocidad más alta de Telcel. Con un chip nuevo, estarás listo para navegar en la red 5G más grande del país (si tu equipo es compatible y la cobertura está disponible en tu zona).`+
-          `Mejor señal y rendimiento: Los chips más recientes están optimizados para ofrecerte una conexión más estable y clara, tanto en llamadas como en datos.`+
-          `Máxima seguridad: Un chip actualizado te brinda las últimas mejoras en seguridad para proteger tu información.`+
-          `¡Es gratis y conservas tu número! Mantienes tu mismo número de siempre, tus contactos y todo lo que tienes.`+
-          `No dejes que un chip viejo te impida disfrutar de todo el potencial de tu smartphone y de la red Telcel.`+
-          
-          `*Requisitos:*`+
-          `Identificación Oficial vigente (INE, pasaporte, cédula profesional).`+
-          `Tu número de Telcel a 10 dígitos.`+
-          `¡Mándame un mensaje para ayudarte a hacer el cambio! Te explico cómo en unos minutos.`
+            `👋 ¡Hola!\n\n` +
+            `¿Sabías que **actualizar tu chip Telcel** te puede dar una **mejor experiencia** en tu celular? ¡Es rápido, sencillo y tiene grandes beneficios! ✨\n\n` +
+            `Aquí te cuento por qué te conviene: 👇\n\n` +
+            `🚀 *¡Acceso a la Red 5G!* Si tu chip es antiguo, podrías estar perdiéndote la velocidad más alta de Telcel. Con un chip nuevo, estarás listo para navegar en la **red 5G más grande del país** (si tu equipo es compatible y la cobertura está disponible en tu zona).\n\n` +
+            `📶 *Mejor señal y rendimiento:* Los chips más recientes están optimizados para ofrecerte una **conexión más estable y clara**, tanto en llamadas como en datos.\n\n` +
+            `🔒 *Máxima seguridad:* Un chip actualizado te brinda las **últimas mejoras en seguridad** para proteger tu información.\n\n` +
+            `✅ *¡Es gratis y conservas tu número!* Mantienes tu mismo número de siempre, tus contactos y todo lo que tienes.\n\n` +
+            `🚫 ¡No dejes que un chip viejo te impida disfrutar de todo el potencial de tu smartphone y de la red Telcel!\n\n` +
+            `--- \n` +
+            `*📌 Requisitos:*\n` +
+            `• Identificación Oficial vigente (INE, pasaporte, cédula profesional).\n` +
+            `• Tu número de Telcel a 10 dígitos.\n\n` +
+            `💬 ¡Mándame un mensaje para ayudarte a hacer el cambio! Te explico cómo en unos minutos. `
         );
         await this.sendPostPromotionMenu(to, 'actualizacion');
       },
@@ -538,22 +530,20 @@ class MessageHandler {
         const fileUrl = `${config.BASE_URL}/promociones/promo3.jpg`;
         await whatsappService.sendImage(to,fileUrl);
         await whatsappService.sendMessage(to, 
-          `¿Quieres cambiarte a Telcel y conservar tu mismo número? ¡Es súper fácil y rápido!`+
-
-          `Con la Portabilidad Telcel, disfruta de la red más grande de México y una promo increíble:`+
-
-          `*¡Tu mismo número!* No pierdes contactos ni complicaciones.`+
-          `*La mejor cobertura:* Conéctate a la red más grande y con 5G (si tu equipo es compatible).`+
-          `*¡Triple de beneficios en tus recargas!* 🤩 Al portar tu número a Telcel en prepago Amigo, obtén ¡el triple de Gigas y beneficios en tus recargas de $50 o más durante los primeros 5 meses!`+
-          `¿Qué necesitas para portarte?`+
-
-          `Identificación Oficial vigente (INE, pasaporte, cédula profesional).`+
-          `Tu número de telefono a 10 dígitos.`+
-          `Ser el titular de la línea que quieres portar (o tener carta poder si no eres el titular).`+
-          `No tener adeudos con tu compañía actual (si es pospago).`+
-          `¡Únete a la red líder con esta promoción increíble!`+
-
-          `*Mándame un mensaje para darte todos los detalles y ayudarte con tu cambio. ¡Es más sencillo de lo que imaginas!*`
+            `👋 ¡Hola!\n\n` +
+            `¿Quieres **cambiarte a Telcel y conservar tu mismo número**? ¡Es **súper fácil y rápido**! 🚀\n\n` +
+            `Con la **Portabilidad Telcel**, disfruta de la red más grande de México y una **promo increíble**:\n\n` +
+            `✅ *¡Tu mismo número!* No pierdes contactos ni complicaciones.\n` +
+            `📶 *La mejor cobertura:* Conéctate a la red más grande y con **5G** (si tu equipo es compatible).\n` +
+            `🎉 *¡Triple de beneficios en tus recargas!* 🤩 Al portar tu número a Telcel en prepago Amigo, obtén **¡el triple de Gigas y beneficios en tus recargas de $50 o más durante los primeros 5 meses!**\n\n` +
+            `--- \n` +
+            `*📌 ¿Qué necesitas para portarte?*\n` +
+            `• **Identificación Oficial vigente** (INE, pasaporte, cédula profesional).\n` +
+            `• Tu **número de teléfono a 10 dígitos**.\n` +
+            `• Ser el **titular de la línea** que quieres portar (o tener carta poder si no eres el titular).\n` +
+            `• **No tener adeudos** con tu compañía actual (si es pospago).\n\n` +
+            `¡Únete a la red líder con esta promoción increíble! 🤩\n\n` +
+            `💬 *¡Mándame un mensaje para darte todos los detalles y ayudarte con tu cambio! ¡Es más sencillo de lo que imaginas!*`
         );
         await this.sendPostPromotionMenu(to, 'portabilidad');
       },
@@ -562,24 +552,22 @@ class MessageHandler {
         const fileUrl = `${config.BASE_URL}/promociones/promo4.jpg`;
         await whatsappService.sendImage(to,fileUrl);
         await whatsappService.sendMessage(to, 
-        `¿Tu smartphone ya no te da el ancho? ¡Es hora de estrenar!`+
-
-        `Con Telcel, puedes cambiar tu equipo por uno nuevo y conservar tu mismo número de siempre. ¡Es fácil y rápido!`+
-
-        `Beneficios de renovar con Telcel:`+
-
-        `Estrena lo último en tecnología: Elige entre una gran variedad de smartphones.`+
-        `Aprovecha la Red 5G: Disfruta de la máxima velocidad con tu nuevo equipo y la mejor cobertura Telcel.`+
-        `Mantén tu número: ¡Sin complicaciones! Conservas todos tus contactos y no necesitas avisar a nadie.`+
-        `Opciones de financiamiento: Encuentra un plan que se ajuste a tu presupuesto.`+
-        `¿Qué necesitas para renovar tu equipo?`+
-
-        `Ser el titular de la línea Telcel.`+
-        `Tu identificación oficial vigente (INE, pasaporte, etc.).`+
-        `Tener tu línea activa y al corriente con tus pagos (si es plan de renta).`+
-
-        `⬇️⬇️Aqui puedes ver el catalogo de quipos disponible⬇️⬇️`+
-        `tiiexpress.catalog.kyte.site`
+            `👋 ¡Hola!\n\n` +
+            `¿Tu smartphone ya no te da el ancho? 😩 ¡Es **hora de estrenar**!\n\n` +
+            `Con **Telcel**, puedes **cambiar tu equipo por uno nuevo** y **conservar tu mismo número** de siempre. ¡Es fácil y rápido! 🚀\n\n` +
+            `✨ *Beneficios de renovar con Telcel:*\n` +
+            `• **Estrena lo último en tecnología**: Elige entre una gran variedad de smartphones.\n` +
+            `• **Aprovecha la Red 5G**: Disfruta de la máxima velocidad con tu nuevo equipo y la mejor cobertura Telcel.\n` +
+            `• **Mantén tu número**: ¡Sin complicaciones! Conservas todos tus contactos y no necesitas avisar a nadie.\n` +
+            `• **Opciones de financiamiento**: Encuentra un plan que se ajuste a tu presupuesto.\n\n` +
+            `--- \n` +
+            `📌 *¿Qué necesitas para renovar tu equipo?*\n` +
+            `• Ser el **titular de la línea Telcel**.\n` +
+            `• Tu **identificación oficial vigente** (INE, pasaporte, etc.).\n` +
+            `• Tener tu **línea activa** y al corriente con tus pagos (si es plan de renta).\n\n` +
+            `⬇️⬇️ ¡Aquí puedes ver el **catálogo de equipos disponible**! ⬇️⬇️\n` +
+            `tiiexpress.catalog.kyte.site\n\n` +
+            `💬 ¡Mándame un mensaje para ayudarte a elegir tu próximo smartphone! 😉`
         );
         await this.sendPostPromotionMenu(to, 'portabilidad');
       },
