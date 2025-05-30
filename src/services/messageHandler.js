@@ -410,7 +410,7 @@ class MessageHandler {
         
     // Guardar el tipo de promoción en el estado
     this.assistandState[to] = {
-      step: 'post_promotion_modem',
+      step: 'post_promotion',
       promotionType: promotionType
     };
     
@@ -428,7 +428,7 @@ class MessageHandler {
         await this.sendPromotionsMenu(to);
       },
 
-      "mas_info|dame mas informacion": async () => {
+      "mas_info": async () => {
         await whatsappService.sendMessage(to, "Por favor, ¿cuál es tu nombre completo y de que parte de la republica nos escribes?");
         this.assistandState[to] = {
           step: 'capture_name',
