@@ -467,7 +467,7 @@ class MessageHandler {
             `👋 ¿Cansado de los **plazos forzosos** en tu plan de celular? 😩\n\n` +
             `¡Tengo una **excelente noticia** para ti! Con los nuevos **Planes Telcel Libre**, ¡dile adiós a los amarres y disfruta de **total libertad**! 🚀\n\n` +
             `Aquí lo más importante: 👇\n\n` +
-            `✅ **¡Sin plazos forzosos!** Cambia o cancela cuando quieras, ¡tú decides!\n` +
+            `✅ **¡Sin plazos forzosos!**\n` +
             `⚡️ **Velocidad 5G real**: Navega a la máxima velocidad y sin interrupciones.\n` +
             `📱 **Gigas para todo**: Desde 4 GB hasta 55 GB (¡o 40 GB en el plan VIP!).\n` +
             ` unlimited **Redes Sociales Ilimitadas**: WhatsApp, Facebook, Instagram, X (antes Twitter), ¡sin gastar tus gigas! 🤳\n` +
