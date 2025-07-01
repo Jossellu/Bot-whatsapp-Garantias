@@ -33,8 +33,79 @@ class WhatsAppService {
       throw error;
     }
   }
-  
-  async sendTemplateMessage(to, templateName, parameters, languageCode = 'es') {
+
+async sendQualitySurvey(to, templateName, parameters = [], languageCode = '', includeFlowButton = false) {
+  try {
+    if (!templateName || !languageCode) {
+      throw new Error('Nombre de plantilla o código de idioma faltante');
+    }
+
+    const payload = {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: to,
+      type: 'template',
+      template: {
+        name: templateName,
+        language: {
+          code: languageCode
+        },
+        components: []
+      }
+    };
+
+    // Agregar cuerpo si hay parámetros de texto
+    if (parameters.length > 0) {
+      payload.template.components.push({
+        type: 'body',
+        parameters: parameters.map(param => ({
+          type: 'text',
+          text: param.text.toString().trim()
+        }))
+      });
+    }
+
+    // Agregar botón tipo "flow" si aplica
+    if (includeFlowButton) {
+      payload.template.components.push({
+        type: 'button',
+        sub_type: 'flow',
+        index: '0',
+        parameters: [
+          {
+            type: 'action',
+            action: {}
+          }
+        ]
+      });
+    }
+
+    console.log('Enviando plantilla con payload:', JSON.stringify(payload, null, 2));
+
+    const response = await axios.post(
+      `https://graph.facebook.com/${config.API_VERSION}/${config.BUSINESS_PHONE}/messages`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${config.API_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error('Error detallado al enviar plantilla:', {
+      templateName,
+      parameters,
+      error: error.response?.data || error.message
+    });
+    throw error;
+  }
+}
+
+
+  async sendTemplateMessage(to, templateName, parameters, languageCode = '') {
     try {
       // Validar parámetros obligatorios
       if (!templateName || !languageCode) {

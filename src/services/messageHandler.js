@@ -144,15 +144,25 @@ class MessageHandler {
     }, 3600000); // Cada hora
   }
 
-  // Método para inicializar el trabajo programado
+
   initScheduledJob() {
-    // Programar la tarea diaria a las 5:00 PM
-    scheduleJob('10 17 * * *', async () => {
+    // Tarea diaria a las 5:10 PM
+    scheduleJob('30 17 * * *', async () => {
       try {
         console.log('Ejecutando tarea programada: scraping y envío de mensajes');
         await this.processDailyWarrantyUpdates();
       } catch (error) {
-        console.error('Error en la tarea programada:', error);
+        console.error('❌ Error en la tarea programada de garantía:', error);
+      }
+    });
+
+    // Tarea diaria a las 2:00 PM para enviar encuestas
+    scheduleJob('00 15 * * *', async () => {
+      try {
+        console.log('🕑 Ejecutando tarea programada: envío de encuestas de calidad');
+        await this.processDailySurveyUpdates();
+      } catch (error) {
+        console.error('❌ Error en la tarea programada de encuestas:', error);
       }
     });
   }
@@ -187,6 +197,7 @@ class MessageHandler {
           const nameclient = data[2]?.toString().trim() || 'Usuari@';
           const imei = data[3]?.toString().trim() || 'imei';
           const model = data[4]?.toString().trim() || 'no proporcionado';
+          const falla = data[5]?.toString().trim() || 'no proporcionada';
 
           // Buscar el último campo no vacío como status
           let status = '';
@@ -202,6 +213,7 @@ class MessageHandler {
             { type: 'text', text: nameclient },
             { type: 'text', text: model },
             { type: 'text', text: imei },
+            { type: 'text', text: falla },
             { type: 'text', text: status }
           ];
 
@@ -209,7 +221,7 @@ class MessageHandler {
           const validParams = parameters.every(p => typeof p.text === 'string' && p.text.trim() !== '');
           if (!phoneNumber || !validParams) {
             console.warn('❌ Datos incompletos o inválidos:', {
-              phoneNumber, nameclient, model, imei, status
+              phoneNumber, nameclient, model, imei,falla, status
             });
             continue;
           }
@@ -242,6 +254,68 @@ class MessageHandler {
     }
   }
 
+  async processDailySurveyUpdates() {
+      try {
+        const serviceAccountAuth = new JWT({
+          email: config.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+          key: config.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+          scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+        });
+
+        const doc = new GoogleSpreadsheet(config.GOOGLE_SHEET_ID, serviceAccountAuth);
+        await doc.loadInfo();
+        const sheet = doc.sheetsByIndex[2];
+
+        const rows = await sheet.getRows();
+        console.log(`📄 Total filas obtenidas: ${rows.length}`);
+
+        const dateObj = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const year = dateObj.getFullYear();
+        const newday = `${day}/${month}/${year}`;
+        let messagesSent = 0;
+
+        for (const row of rows) {
+          try {
+            const data = row._rawData;
+
+            // Verificar si la fila corresponde a hoy
+            if (!data[0] || !data[0].includes(newday)) continue;
+
+            const phoneNumber = data[5]?.toString().trim();
+            const nombre_cliente = data[3]?.toString().trim() || 'Cliente';
+            const servicio = data[7]?.toString().trim() || 'Servicio';
+              
+            const formattedNumber = `52${phoneNumber}`.replace(/\D/g, '');
+            await whatsappService.sendQualitySurvey(
+              formattedNumber,
+              'servicio_post_venta',
+                [
+                { text: nombre_cliente },
+                { text: servicio }
+              ],
+               'es_MX',
+               true
+            );
+
+            messagesSent++;
+            console.log(`✅ Mensaje enviado a ${formattedNumber}`);
+
+          } catch (error) {
+            console.error(`⚠️ Error procesando fila: ${error.message}`);
+            console.error('Datos de la fila:', row._rawData);
+          }
+        }
+
+        console.log(`✅ Proceso completado. Mensajes enviados: ${messagesSent}`);
+        return messagesSent;
+
+      } catch (error) {
+        console.error('❌ Error en envio de encuesta de calidad:', error);
+        throw error;
+      }
+    }
 
   async handleIncomingMessage(message, senderInfo) {
     const fromNumber = message.from.slice(0, 2) + message.from.slice(3);
