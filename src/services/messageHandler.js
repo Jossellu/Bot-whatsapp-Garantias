@@ -157,7 +157,7 @@ class MessageHandler {
     });
 
     // Tarea diaria a las 2:00 PM para enviar encuestas
-    scheduleJob('00 15 * * *', async () => {
+    scheduleJob('00 14 * * *', async () => {
       try {
         console.log('🕑 Ejecutando tarea programada: envío de encuestas de calidad');
         await this.processDailySurveyUpdates();
@@ -317,10 +317,101 @@ class MessageHandler {
       }
     }
 
+  async saveFlowSurveyResponses(phoneNumber, responses) {
+    try {
+      const serviceAccountAuth = new JWT({
+        email: config.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+        key: config.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+      });
+
+      const doc = new GoogleSpreadsheet(config.GOOGLE_SHEET_ID, serviceAccountAuth);
+      await doc.loadInfo();
+      const sheet = doc.sheetsByIndex[2]; // Hoja de encuestas
+      const rows = await sheet.getRows();
+      const cleanPhone = phoneNumber.replace(/\D/g, '').slice(-10);
+
+      for (const row of rows) {
+        const rowPhone = row._rawData[5]?.replace(/\D/g, '').slice(-10);
+
+        if (rowPhone === cleanPhone) {
+          // Crear mapa personalizado
+          const campoTraducido = {
+            screen_0_Opciones_0: "Valoracion",
+            screen_0_Opciones_1: "Publicidad",
+            screen_0_Deja_un_comentario_2: "Comentarios"
+          };
+
+          responses.forEach(({ name, value }) => {
+            const nombreColumna = campoTraducido[name];
+            if (nombreColumna) {
+              // Limpieza del valor
+              const cleanedValue = value.slice(2).replace(/_/g, ' ');
+
+              // Asignar por índice fijo
+              switch (nombreColumna) {
+                case "Valoracion":
+                  row._rawData[22] = cleanedValue;
+                  break;
+                case "Publicidad":
+                  row._rawData[23] = cleanedValue;
+                  break;
+                case "Comentarios":
+                  row._rawData[24] = value;
+                  break;
+              }
+            }
+          });
+
+          await row.save();
+          console.log(`✔️ Respuestas guardadas en columnas 23-25 para ${phoneNumber}`);
+          return;
+        }
+      }
+
+      console.warn(`⚠️ No se encontró el número ${phoneNumber} en hoja de encuestas`);
+    } catch (error) {
+      console.error('❌ Error guardando respuestas del flow:', error);
+    }
+  }
+
   async handleIncomingMessage(message, senderInfo) {
     const fromNumber = message.from.slice(0, 2) + message.from.slice(3);
     const incomingMessage = message?.text?.body?.toLowerCase().trim();
     const messageId = message.id;
+    
+    if (message.type === 'interactive' && message.interactive?.type === 'nfm_reply') {
+      const waId = message.from;
+      const rawJson = message.interactive.nfm_reply?.response_json;
+
+      if (!rawJson) {
+        console.warn(`⚠️ Se recibió una respuesta de Flow (nfm_reply) sin contenido para ${waId}`);
+        return;
+      }
+
+      const responses = [];
+      try {
+        const parsed = JSON.parse(rawJson);
+        for (const [key, value] of Object.entries(parsed)) {
+          responses.push({ name: key, value });
+        }
+      } catch (err) {
+        console.error('❌ Error al parsear response_json de nfm_reply:', err);
+        return;
+      }
+
+      console.log(`🧾 Usuario ${waId} respondió la encuesta:`);
+      responses.forEach(r => console.log(`- ${r.name}: ${r.value}`));
+
+      await this.saveFlowSurveyResponses(waId, responses);
+
+      await whatsappService.sendMessage(
+        waId,
+        "¡Gracias por completar nuestra encuesta! Tu opinión es muy valiosa para nosotros. 🙌"
+      );
+
+      return;
+    }
 
     // Verificar si ya procesamos este mensaje
     if (this.processedMessages.has(messageId)) {
@@ -361,6 +452,7 @@ class MessageHandler {
 
     await whatsappService.markAsRead(messageId);
   }
+
   isGreeting(message) {
     // Si el mensaje tiene más de 2 palabras, no es saludo
     if (message.split(/\s+/).length > 2) return false;

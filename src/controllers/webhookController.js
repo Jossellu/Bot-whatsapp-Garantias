@@ -3,6 +3,7 @@ import messageHandler from '../services/messageHandler.js';
 
 class WebhookController {
   async handleIncoming(req, res) {
+    console.log('📥 Webhook recibido:', JSON.stringify(req.body, null, 2));
     const message = req.body.entry?.[0]?.changes[0]?.value?.messages?.[0];
     const senderInfo = req.body.entry?.[0]?.changes[0]?.value?.contacts?.[0];
 
