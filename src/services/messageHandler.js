@@ -408,8 +408,8 @@ class MessageHandler {
           await whatsappService.sendTemplateMessage(
             formattedNumber,
             'recordatorio_pago',
+            [],
             'es_MX',
-            true
           );
 
           messagesSent++;

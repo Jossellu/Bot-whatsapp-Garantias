@@ -105,7 +105,7 @@ async sendQualitySurvey(to, templateName, parameters = [], languageCode = '', in
 }
 
 
-  async sendTemplateMessage(to, templateName, parameters, languageCode = '') {
+  async sendTemplateMessage(to, templateName, parameters = [], languageCode = '') {
     try {
       // Validar parámetros obligatorios
       if (!templateName || !languageCode) {
