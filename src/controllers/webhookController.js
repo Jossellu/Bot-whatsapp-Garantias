@@ -6,7 +6,12 @@ class WebhookController {
     console.log('📥 Webhook recibido:', JSON.stringify(req.body, null, 2));
     const message = req.body.entry?.[0]?.changes[0]?.value?.messages?.[0];
     const senderInfo = req.body.entry?.[0]?.changes[0]?.value?.contacts?.[0];
+    const phoneNumberId = req.body.entry?.[0]?.changes[0]?.value?.metadata?.phone_number_id;
 
+        // Verificar si el mensaje proviene del número correcto
+        if (phoneNumberId !== config.BUSINESS_PHONE) {
+          return res.sendStatus(200); // Ignorar el mensaje
+        }
     if (message && senderInfo) {
       const rawNumber = senderInfo.wa_id;
 
@@ -31,3 +36,4 @@ class WebhookController {
 }
 
 export default new WebhookController();
+

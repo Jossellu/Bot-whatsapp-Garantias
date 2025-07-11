@@ -165,6 +165,15 @@ class MessageHandler {
         console.error('❌ Error en la tarea programada de encuestas:', error);
       }
     });
+
+    scheduleJob('00 12 * * *', async () => {
+      try {
+        console.log('🕑 Ejecutando tarea programada: envío de recordatorios');
+        await this.processDailyReminders();
+      } catch (error) {
+        console.error('❌ Error en la tarea programada de recordatorios:', error);
+      }
+    });
   }
 
   // Método para procesar las actualizaciones diarias de garantía
@@ -351,13 +360,13 @@ class MessageHandler {
               // Asignar por índice fijo
               switch (nombreColumna) {
                 case "Valoracion":
-                  row._rawData[22] = cleanedValue;
+                  row._rawData[18] = cleanedValue;
                   break;
                 case "Publicidad":
-                  row._rawData[23] = cleanedValue;
+                  row._rawData[19] = cleanedValue;
                   break;
                 case "Comentarios":
-                  row._rawData[24] = value;
+                  row._rawData[20] = value;
                   break;
               }
             }
@@ -374,6 +383,52 @@ class MessageHandler {
       console.error('❌ Error guardando respuestas del flow:', error);
     }
   }
+
+  async processDailyReminders() {
+    try {
+      const serviceAccountAuth = new JWT({
+        email: config.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+        key: config.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+      });
+
+      const doc = new GoogleSpreadsheet(config.GOOGLE_SHEET_ID, serviceAccountAuth);
+      await doc.loadInfo();
+      const sheet = doc.sheetsByIndex[4];
+
+      const rows = await sheet.getRows();
+      console.log(`📄 Total filas obtenidas: ${rows.length}`);
+
+      let messagesSent = 0;
+
+      for (const row of rows) {
+        try {
+          const phoneNumber = row._rawData[1]?.toString().trim();
+          const formattedNumber = `52${phoneNumber}`.replace(/\D/g, '');
+          await whatsappService.sendTemplateMessage(
+            formattedNumber,
+            'recordatorio_pago',
+            'es_MX',
+            true
+          );
+
+          messagesSent++;
+          console.log(`✅ Mensaje enviado a ${formattedNumber}`);
+        } catch (error) {
+          console.error(`⚠️ Error procesando fila: ${error.message}`);
+          console.error('Datos de la fila:', row._rawData);
+        }
+      }
+
+      console.log(`✅ Proceso completado. Mensajes enviados: ${messagesSent}`);
+      return messagesSent;
+    } catch (error) {
+      console.error('❌ Error en envio de recordatorios:', error);
+      throw error;
+    }
+  }
+
+
 
   async handleIncomingMessage(message, senderInfo) {
     const fromNumber = message.from.slice(0, 2) + message.from.slice(3);
