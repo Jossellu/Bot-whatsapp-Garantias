@@ -125,6 +125,7 @@ async sendQualitySurvey(to, templateName, parameters = [], languageCode = '', in
         },
       };
 
+      
       // Agregar parámetros si hay
       if (parameters.length > 0) {
         payload.template.components = [
