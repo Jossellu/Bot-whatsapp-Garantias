@@ -260,9 +260,9 @@ class MessageHandler {
           const data = row._rawData;
 
           // Verificar si la fila corresponde a hoy
-          if (!data[0] || !data[0].includes(today)) continue;
+          if (!data[1] || !data[1].includes(today)) continue;
 
-          const phoneNumber = data[1]?.toString().trim();
+          const phoneNumber = data[0]?.toString().trim();
 
 
           console.log(`📤 Enviando publicidad a ${phoneNumber}`);
