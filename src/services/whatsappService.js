@@ -172,7 +172,8 @@ async sendQualitySurvey(to, templateName, parameters = [], languageCode = '', in
       console.log(`✅ Plantilla enviada a ${formattedNumber}`);
       return response.data;
     } catch (error) {
-      console.error(`❌ Error al enviar plantilla: ${error.response?.data || error.message}`);
+        console.error('❌ Error al enviar plantilla:', JSON.stringify(error.response?.data || error.message, null, 2));
+        console.error('Datos de la fila:', row._rawData);
       throw error;
     }
   }
