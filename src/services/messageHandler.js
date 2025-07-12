@@ -252,7 +252,7 @@ class MessageHandler {
       const rows = await sheet.getRows();
       console.log(`📄 Total filas obtenidas: ${rows.length}`);
 
-      const today = new Date().toISOString().split('T')[1];
+      const today = new Date().toISOString().split('T')[0];
       let messagesSent = 0;
 
       for (const row of rows) {
