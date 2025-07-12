@@ -267,11 +267,12 @@ class MessageHandler {
 
           console.log(`📤 Enviando publicidad a ${phoneNumber}`);
 
-          await whatsappService.sendUniversalPublicityTemplate(
+          await whatsappService.sendUniversalPublicityTemplate({
             phoneNumber,
-            'publicidad_prueba',
-            'es_MX',
-          );
+            templateName: 'publicidad_prueba',
+            languageCode: 'es_MX',
+          });
+
 
           messagesSent++;
           console.log(`✅ Mensaje enviado a ${phoneNumber}`);
