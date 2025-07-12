@@ -105,6 +105,79 @@ async sendQualitySurvey(to, templateName, parameters = [], languageCode = '', in
 }
 
 
+  async sendUniversalPublicityTemplate({
+    phoneNumber,
+    templateName,
+    languageCode = 'es_MX',
+    parameters = [],
+    headerMedia = null,
+  }) {
+    try {
+      const formattedNumber = `52${phoneNumber}`.replace(/\D/g, '');
+
+      const payload = {
+        messaging_product: 'whatsapp',
+        to: formattedNumber,
+        type: 'template',
+        template: {
+          name: templateName,
+          language: { code: languageCode },
+        },
+      };
+
+      // Agregar parámetros si hay
+      if (parameters.length > 0) {
+        payload.template.components = [
+          {
+            type: 'body',
+            parameters: parameters.map((param) => {
+              // Detectar si es texto, número, emoji, etc.
+              if (typeof param === 'string' || typeof param === 'number') {
+                return { type: 'text', text: param.toString() };
+              }
+              return param; // soporte para objetos personalizados
+            }),
+          },
+        ];
+      }
+
+      // Agregar encabezado multimedia si se especifica
+      if (headerMedia && headerMedia.type && headerMedia.link) {
+        if (!payload.template.components) payload.template.components = [];
+        payload.template.components.push({
+          type: 'header',
+          parameters: [
+            {
+              type: headerMedia.type, // 'image', 'video', 'document'
+              [headerMedia.type]: {
+                link: headerMedia.link,
+              },
+            },
+          ],
+        });
+      }
+
+      // Enviar solicitud a la API de WhatsApp
+      const response = await axios.post(
+        `https://graph.facebook.com/${config.API_VERSION}/${config.BUSINESS_PHONE}/messages`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${config.API_TOKEN}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      console.log(`✅ Plantilla enviada a ${formattedNumber}`);
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Error al enviar plantilla: ${error.response?.data || error.message}`);
+      throw error;
+    }
+  }
+
+
   async sendTemplateMessage(to, templateName, parameters = [], languageCode = '') {
     try {
       // Validar parámetros obligatorios

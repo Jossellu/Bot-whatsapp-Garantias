@@ -146,7 +146,7 @@ class MessageHandler {
 
 
   initScheduledJob() {
-    // Tarea diaria a las 5:10 PM
+    // GARANTIAS
     scheduleJob('30 17 * * *', async () => {
       try {
         console.log('Ejecutando tarea programada: scraping y envío de mensajes');
@@ -156,7 +156,7 @@ class MessageHandler {
       }
     });
 
-    // Tarea diaria a las 2:00 PM para enviar encuestas
+    // ENCUESTAS DE CALIDAD
     scheduleJob('00 14 * * *', async () => {
       try {
         console.log('🕑 Ejecutando tarea programada: envío de encuestas de calidad');
@@ -166,12 +166,23 @@ class MessageHandler {
       }
     });
 
+    // RECORDATORIOS
     scheduleJob('00 12 * * *', async () => {
       try {
         console.log('🕑 Ejecutando tarea programada: envío de recordatorios');
         await this.processDailyReminders();
       } catch (error) {
         console.error('❌ Error en la tarea programada de recordatorios:', error);
+      }
+    });
+
+    // PUBLICIDAD
+    scheduleJob('00 12 * * *', async () => {
+      try {
+        console.log('🕑 Ejecutando tarea programada: envío de publicidad');
+        await this.processDailyPublicity();
+      } catch (error) {
+        console.error('❌ Error en la tarea programada de publicidad:', error);
       }
     });
   }
@@ -326,6 +337,62 @@ class MessageHandler {
       }
     }
 
+
+  // Método para procesar las actualizaciones diarias de publicidad
+  async processDailyPublicity() {
+    try {
+      const serviceAccountAuth = new JWT({
+        email: config.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+        key: config.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+      });
+
+      const doc = new GoogleSpreadsheet(config.GOOGLE_SHEET_ID, serviceAccountAuth);
+      await doc.loadInfo();
+      const sheet = doc.sheetsByIndex[1];
+
+      const rows = await sheet.getRows();
+      console.log(`📄 Total filas obtenidas: ${rows.length}`);
+
+      const today = new Date().toISOString().split('T')[1];
+      let messagesSent = 0;
+
+      for (const row of rows) {
+        try {
+          const data = row._rawData;
+
+          // Verificar si la fila corresponde a hoy
+          if (!data[0] || !data[0].includes(today)) continue;
+
+          const phoneNumber = data[1]?.toString().trim();
+
+
+          console.log(`📤 Enviando publicidad a ${phoneNumber}`);
+
+          await whatsappService.sendUniversalPublicityTemplate(
+            phoneNumber,
+            'publicidad_prueba',
+            'es_MX',
+          );
+
+          messagesSent++;
+          console.log(`✅ Mensaje enviado a ${phoneNumber}`);
+
+        } catch (error) {
+          console.error(`⚠️ Error procesando fila: ${error.message}`);
+          console.error('Datos de la fila:', row._rawData);
+        }
+      }
+
+      console.log(`✅ Proceso completado. Mensajes enviados: ${messagesSent}`);
+      return messagesSent;
+
+    } catch (error) {
+      console.error('❌ Error en processDailyWarrantyUpdates:', error);
+      throw error;
+    }
+  }
+
   async saveFlowSurveyResponses(phoneNumber, responses) {
     try {
       const serviceAccountAuth = new JWT({
@@ -398,11 +465,23 @@ class MessageHandler {
 
       const rows = await sheet.getRows();
       console.log(`📄 Total filas obtenidas: ${rows.length}`);
+      const dateObj = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000);
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const year = dateObj.getFullYear();
+      const newday = `${day}/${month}/${year}`;
 
       let messagesSent = 0;
-
+      
       for (const row of rows) {
         try {
+          const data = row._rawData;
+
+          // Verificar si la fila corresponde a hoy
+          if (!data[5] || !data[5].includes(newday)) continue;
+
+
+
           const phoneNumber = row._rawData[1]?.toString().trim();
           const formattedNumber = `52${phoneNumber}`.replace(/\D/g, '');
           await whatsappService.sendTemplateMessage(
